@@ -160,11 +160,142 @@ for(var i=0;i<names.length;i++){
 var cur=0,tmr=null,raf=null,playing=false,done=false,t0=0;
 var total=names.length+1;
 
+/* ============ AUDIO ENGINE ============ */
+var AC=null,droneNodes=null;
+
+function initAC(){
+  if(AC)return;
+  AC=new(window.AudioContext||window.webkitAudioContext)();
+}
+
+/* Drone ambiente — pad grave pulsante */
+function startDrone(){
+  if(!AC||droneNodes)return;
+  var master=AC.createGain();
+  master.gain.setValueAtTime(0,AC.currentTime);
+  master.gain.linearRampToValueAtTime(0.07,AC.currentTime+2.5);
+  master.connect(AC.destination);
+
+  function makeOsc(freq,type,vol){
+    var o=AC.createOscillator();
+    var g=AC.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.value=vol;
+    o.connect(g);g.connect(master);
+    o.start();return o;
+  }
+  /* acorde aberto — Lá menor */
+  var o1=makeOsc(55,'sine',1);     /* A1 */
+  var o2=makeOsc(110,'sine',.6);   /* A2 */
+  var o3=makeOsc(164.8,'sine',.35);/* E3 */
+  var o4=makeOsc(220,'sine',.2);   /* A3 */
+
+  /* LFO leve no volume — respira */
+  var lfo=AC.createOscillator();
+  var lfog=AC.createGain();
+  lfo.frequency.value=0.18;lfog.gain.value=0.025;
+  lfo.connect(lfog);lfog.connect(master.gain);
+  lfo.start();
+
+  droneNodes={master:master,oscs:[o1,o2,o3,o4],lfo:lfo};
+}
+
+function stopDrone(){
+  if(!droneNodes)return;
+  droneNodes.master.gain.linearRampToValueAtTime(0,AC.currentTime+1.8);
+  var o=droneNodes;
+  setTimeout(function(){
+    o.oscs.forEach(function(x){try{x.stop()}catch(e){}});
+    try{o.lfo.stop()}catch(e){}
+  },2000);
+  droneNodes=null;
+}
+
+/* Whoosh cinematográfico — ruído filtrado varrendo */
+function playWhoosh(){
+  if(!AC)return;
+  var len=AC.sampleRate*0.9;
+  var buf=AC.createBuffer(1,len,AC.sampleRate);
+  var data=buf.getChannelData(0);
+  for(var i=0;i<len;i++) data[i]=Math.random()*2-1;
+
+  var src=AC.createBufferSource();src.buffer=buf;
+
+  var filt=AC.createBiquadFilter();
+  filt.type='bandpass';filt.Q.value=1.2;
+  filt.frequency.setValueAtTime(80,AC.currentTime);
+  filt.frequency.exponentialRampToValueAtTime(3200,AC.currentTime+0.55);
+
+  var g=AC.createGain();
+  g.gain.setValueAtTime(0,AC.currentTime);
+  g.gain.linearRampToValueAtTime(0.28,AC.currentTime+0.06);
+  g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.9);
+
+  src.connect(filt);filt.connect(g);g.connect(AC.destination);
+  src.start();
+}
+
+/* Impacto grave — sente o nome chegando */
+function playImpact(){
+  if(!AC)return;
+  var o=AC.createOscillator();
+  var g=AC.createGain();
+  o.type='sine';
+  o.frequency.setValueAtTime(120,AC.currentTime);
+  o.frequency.exponentialRampToValueAtTime(38,AC.currentTime+0.35);
+  g.gain.setValueAtTime(0.45,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.5);
+  o.connect(g);g.connect(AC.destination);
+  o.start();o.stop(AC.currentTime+0.5);
+}
+
+/* Chime dourado — sincroniza com a linha */
+function playChime(delay){
+  if(!AC)return;
+  var freqs=[1047,1319,1568]; /* C6 E6 G6 — acorde maior brilhante */
+  freqs.forEach(function(f,idx){
+    setTimeout(function(){
+      var o=AC.createOscillator();
+      var g=AC.createGain();
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0.12,AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+1.8);
+      o.connect(g);g.connect(AC.destination);
+      o.start();o.stop(AC.currentTime+1.8);
+    },idx*60);
+  });
+}
+
+/* Toque suave de intro */
+function playIntroTone(){
+  if(!AC)return;
+  [220,277.2,329.6].forEach(function(f,i){
+    setTimeout(function(){
+      var o=AC.createOscillator();
+      var g=AC.createGain();
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0.1,AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+2.5);
+      o.connect(g);g.connect(AC.destination);
+      o.start();o.stop(AC.currentTime+2.5);
+    },i*180);
+  });
+}
+/* ============ FIM AUDIO ============ */
+
 function getSl(i){return document.getElementById('s'+i)}
 
 function show(i){
   for(var j=0;j<total;j++){var s=getSl(j);if(s){s.classList.remove('active')}}
   var s=getSl(i);if(s){void s.offsetWidth;s.classList.add('active')}
+  /* áudio sincronizado */
+  if(i===0){
+    playIntroTone();
+  } else {
+    playWhoosh();
+    playImpact();
+    setTimeout(function(){playChime()},700); /* chime junto com a linha */
+  }
 }
 
 function tick(){
@@ -188,6 +319,7 @@ function next(){
     playing=false;done=true;
     if(tmr)clearTimeout(tmr);if(raf)cancelAnimationFrame(raf);
     prog.classList.remove('on');prog.style.width='0%';
+    stopDrone();
     show(0);endb.classList.add('on');
     return;
   }
@@ -195,8 +327,11 @@ function next(){
 }
 
 function start(){
+  initAC();
+  if(AC&&AC.state==='suspended') AC.resume();
   ov.classList.add('hidden');endb.classList.remove('on');
   cur=0;playing=true;done=false;
+  startDrone();
   show(0);startTimer();
   var el=document.documentElement;
   if(el.requestFullscreen){try{el.requestFullscreen()}catch(e){}}
@@ -204,12 +339,12 @@ function start(){
 }
 
 document.getElementById('btnStart').addEventListener('click',start);
-endb.addEventListener('click',start);
+endb.addEventListener('click',function(){stopDrone();start()});
 
 document.addEventListener('keydown',function(e){
   if(e.code==='Space'){e.preventDefault();if(!playing)start()}
   else if(e.code==='ArrowRight'&&playing){if(tmr)clearTimeout(tmr);if(raf)cancelAnimationFrame(raf);next()}
-  else if(e.code==='KeyR'){start()}
+  else if(e.code==='KeyR'){stopDrone();start()}
 });
 </script>
 
