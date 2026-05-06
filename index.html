@@ -11,98 +11,57 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000}
 body{font-family:'Inter',-apple-system,sans-serif;position:fixed;inset:0;user-select:none;-webkit-user-select:none}
-
-.stage{
-position:fixed;inset:0;
-background:
-radial-gradient(ellipse 80% 55% at 25% 20%, rgba(20,80,197,.5) 0%, transparent 60%),
-radial-gradient(ellipse 60% 50% at 78% 82%, rgba(0,158,96,.18) 0%, transparent 65%),
-linear-gradient(140deg,#00091F 0%,#001F5C 55%,#000A2A 100%);
-overflow:hidden;
-}
-.stage::before{
-content:’’;position:absolute;inset:-20%;
-background:radial-gradient(circle at 22% 28%, rgba(255,255,255,.06) 0%, transparent 30%),
-radial-gradient(circle at 80% 72%, rgba(20,80,197,.22) 0%, transparent 40%);
-animation:drift 18s ease-in-out infinite alternate;
-pointer-events:none;z-index:1;
-}
+.stage{position:fixed;inset:0;background:radial-gradient(ellipse 80% 55% at 25% 20%,rgba(20,80,197,.5) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 78% 82%,rgba(0,158,96,.18) 0%,transparent 65%),linear-gradient(140deg,#00091F 0%,#001F5C 55%,#000A2A 100%);overflow:hidden}
+.stage::before{content:'';position:absolute;inset:-20%;background:radial-gradient(circle at 22% 28%,rgba(255,255,255,.06) 0%,transparent 30%),radial-gradient(circle at 80% 72%,rgba(20,80,197,.22) 0%,transparent 40%);animation:drift 18s ease-in-out infinite alternate;pointer-events:none;z-index:1}
 @keyframes drift{0%{transform:translate(0,0) rotate(0)}100%{transform:translate(4%,-3%) rotate(2deg)}}
-.stage::after{
-content:’’;position:absolute;inset:0;
-background:radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.62) 100%);
-pointer-events:none;z-index:5;
-}
-
-.slide{
-position:absolute;inset:0;
-display:flex;flex-direction:column;align-items:center;justify-content:center;
-padding:6vh 6vw;opacity:0;pointer-events:none;z-index:10;
-transition:opacity .6s ease;
-}
+.stage::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,.62) 100%);pointer-events:none;z-index:5}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6vh 6vw;opacity:0;pointer-events:none;z-index:10;transition:opacity .6s ease}
 .slide.active{opacity:1;pointer-events:auto}
-
-/* INTRO */
-.ie{font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.7rem,1.6vw,1rem);letter-spacing:.45em;color:#E5B643;text-transform:uppercase;font-weight:500;margin-bottom:2.5vh;opacity:0;transform:translateY(10px)}
+.ie{font-family:'Space Grotesk',sans-serif;font-size:clamp(.7rem,1.6vw,1rem);letter-spacing:.45em;color:#E5B643;text-transform:uppercase;font-weight:500;margin-bottom:2.5vh;opacity:0;transform:translateY(10px)}
 .it{font-weight:900;font-size:clamp(3rem,14vw,11rem);line-height:.88;letter-spacing:-.045em;background:linear-gradient(180deg,#FFF 0%,#B8D0FF 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;margin-bottom:3vh;text-align:center;opacity:0;transform:translateY(20px) scale(1.05);filter:blur(14px)}
 .id{width:0;height:2px;background:#E5B643;margin:1vh auto 3vh}
-.ip{font-family:‘Space Grotesk’,sans-serif;font-size:clamp(1rem,2.3vw,1.5rem);letter-spacing:.32em;color:rgba(255,255,255,.95);text-transform:uppercase;font-weight:500;margin-bottom:4vh;text-align:center;opacity:0}
-.ir{font-family:‘Inter’,sans-serif;font-size:clamp(.8rem,1.6vw,1.05rem);letter-spacing:.22em;color:rgba(255,255,255,.7);text-transform:uppercase;font-weight:700;text-align:center;opacity:0}
+.ip{font-family:'Space Grotesk',sans-serif;font-size:clamp(1rem,2.3vw,1.5rem);letter-spacing:.32em;color:rgba(255,255,255,.95);text-transform:uppercase;font-weight:500;margin-bottom:4vh;text-align:center;opacity:0}
+.ir{font-family:'Inter',sans-serif;font-size:clamp(.8rem,1.6vw,1.05rem);letter-spacing:.22em;color:rgba(255,255,255,.7);text-transform:uppercase;font-weight:700;text-align:center;opacity:0}
 .ir .ac{color:#00A86B}
-
 .slide.active .ie{animation:fadeUp .9s .1s cubic-bezier(.2,.8,.2,1) forwards}
 .slide.active .it{animation:titleIn 1.4s .2s cubic-bezier(.2,.8,.2,1) forwards}
 .slide.active .id{animation:lineGo .9s 1s cubic-bezier(.2,.8,.2,1) forwards}
 .slide.active .ip{animation:fadeUp .9s 1.2s cubic-bezier(.2,.8,.2,1) forwards}
 .slide.active .ir{animation:fadeUp .9s 1.4s cubic-bezier(.2,.8,.2,1) forwards}
-
 @keyframes titleIn{0%{opacity:0;transform:translateY(20px) scale(1.05);filter:blur(14px)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
 @keyframes lineGo{to{width:clamp(80px,14vw,200px)}}
-
-/* NAME SLIDES */
-.nn{position:absolute;top:6vh;left:6vw;font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.75rem,1.3vw,1rem);letter-spacing:.32em;color:#E5B643;text-transform:uppercase;font-weight:500;opacity:0}
-.nl{position:absolute;top:6vh;right:6vw;font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.75rem,1.3vw,1rem);letter-spacing:.45em;color:rgba(255,255,255,.55);text-transform:uppercase;font-weight:500;opacity:0}
+.nn{position:absolute;top:6vh;left:6vw;font-family:'Space Grotesk',sans-serif;font-size:clamp(.75rem,1.3vw,1rem);letter-spacing:.32em;color:#E5B643;text-transform:uppercase;font-weight:500;opacity:0}
+.nl{position:absolute;top:6vh;right:6vw;font-family:'Space Grotesk',sans-serif;font-size:clamp(.75rem,1.3vw,1rem);letter-spacing:.45em;color:rgba(255,255,255,.55);text-transform:uppercase;font-weight:500;opacity:0}
 .nt{font-weight:900;font-size:clamp(2.2rem,calc(5vw + 3vh),8rem);line-height:.95;letter-spacing:-.025em;text-align:center;max-width:92vw;color:#FFF;text-transform:uppercase;word-wrap:break-word;opacity:0;filter:blur(25px);transform:scale(1.08);text-shadow:0 0 60px rgba(184,208,255,.25)}
 .nb{width:0;height:3px;background:#E5B643;margin-top:4vh;box-shadow:0 0 18px rgba(229,182,67,.4)}
-.nk{font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.7rem,1.3vw,.95rem);letter-spacing:.42em;color:rgba(255,255,255,.65);text-transform:uppercase;font-weight:500;margin-top:3vh;opacity:0;text-align:center}
+.nk{font-family:'Space Grotesk',sans-serif;font-size:clamp(.7rem,1.3vw,.95rem);letter-spacing:.42em;color:rgba(255,255,255,.65);text-transform:uppercase;font-weight:500;margin-top:3vh;opacity:0;text-align:center}
 .sp{position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at center,rgba(184,208,255,.18) 0%,transparent 70%);opacity:0;pointer-events:none}
-
 .slide.active .nn{animation:fi .6s .4s ease forwards}
 .slide.active .nl{animation:fi .6s .55s ease forwards}
 .slide.active .nt{animation:nameIn 1s cubic-bezier(.2,.85,.25,1) forwards}
 .slide.active .nb{animation:lineGo2 .7s .7s cubic-bezier(.2,.8,.2,1) forwards}
 .slide.active .nk{animation:fi .8s 1s ease forwards}
 .slide.active .sp{animation:spot 1.2s ease forwards}
-
 @keyframes nameIn{0%{opacity:0;transform:scale(1.08);filter:blur(25px)}60%{opacity:1}100%{opacity:1;transform:scale(1);filter:blur(0)}}
 @keyframes lineGo2{to{width:clamp(120px,22vw,320px)}}
 @keyframes fi{to{opacity:1}}
 @keyframes spot{0%{opacity:0;transform:scale(.9)}40%{opacity:.9;transform:scale(1.05)}100%{opacity:.5;transform:scale(1)}}
-
-/* OVERLAY */
 .ov{position:fixed;inset:0;background:rgba(0,9,31,.93);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .6s ease;gap:4vh}
 .ov.hidden{opacity:0;pointer-events:none}
-.ov-eye{font-family:‘Space Grotesk’,sans-serif;font-size:.75rem;letter-spacing:.4em;color:#E5B643;text-transform:uppercase;margin-bottom:1.5vh;text-align:center}
+.ov-eye{font-family:'Space Grotesk',sans-serif;font-size:.75rem;letter-spacing:.4em;color:#E5B643;text-transform:uppercase;margin-bottom:1.5vh;text-align:center}
 .ov-title{font-weight:900;font-size:clamp(2rem,8vw,5rem);line-height:.9;letter-spacing:-.03em;background:linear-gradient(180deg,#FFF 0%,#B8D0FF 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;text-align:center}
-.ov-sub{font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.85rem,1.8vw,1.1rem);letter-spacing:.3em;color:rgba(255,255,255,.85);text-transform:uppercase;margin-top:1.5vh;text-align:center}
-.btn-start{background:#FFF;color:#001235;border:none;padding:1.3rem 2.8rem;font-family:‘Inter’,sans-serif;font-weight:800;font-size:clamp(.95rem,2vw,1.15rem);letter-spacing:.18em;text-transform:uppercase;border-radius:999px;cursor:pointer;transition:transform .2s ease,box-shadow .3s ease;box-shadow:0 10px 40px rgba(20,80,197,.45)}
+.ov-sub{font-family:'Space Grotesk',sans-serif;font-size:clamp(.85rem,1.8vw,1.1rem);letter-spacing:.3em;color:rgba(255,255,255,.85);text-transform:uppercase;margin-top:1.5vh;text-align:center}
+.btn-start{background:#FFF;color:#001235;border:none;padding:1.3rem 2.8rem;font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(.95rem,2vw,1.15rem);letter-spacing:.18em;text-transform:uppercase;border-radius:999px;cursor:pointer;box-shadow:0 10px 40px rgba(20,80,197,.45)}
 .btn-start:active{transform:scale(.96)}
-.ov-info{color:rgba(255,255,255,.45);font-family:‘Space Grotesk’,sans-serif;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;text-align:center;line-height:1.9}
-
-/* PROGRESS */
+.ov-info{color:rgba(255,255,255,.45);font-family:'Space Grotesk',sans-serif;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;text-align:center;line-height:1.9}
 .prog{position:fixed;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#E5B643,#FFD978);width:0;z-index:50;opacity:0;transition:opacity .4s ease;box-shadow:0 0 12px rgba(229,182,67,.6)}
 .prog.on{opacity:.85}
-
-/* BRAND */
-.brand{position:fixed;bottom:4vh;right:4vw;z-index:20;font-family:‘Space Grotesk’,sans-serif;font-size:.7rem;letter-spacing:.35em;color:rgba(255,255,255,.3);text-transform:uppercase;pointer-events:none}
-
-/* END BTN */
-.endb{position:fixed;bottom:5vh;left:50%;transform:translateX(-50%);z-index:60;display:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:.75rem 1.6rem;font-family:‘Space Grotesk’,sans-serif;font-size:.75rem;letter-spacing:.25em;text-transform:uppercase;border-radius:999px;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.brand{position:fixed;bottom:4vh;right:4vw;z-index:20;font-family:'Space Grotesk',sans-serif;font-size:.7rem;letter-spacing:.35em;color:rgba(255,255,255,.3);text-transform:uppercase;pointer-events:none}
+.endb{position:fixed;bottom:5vh;left:50%;transform:translateX(-50%);z-index:60;display:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:.75rem 1.6rem;font-family:'Space Grotesk',sans-serif;font-size:.75rem;letter-spacing:.25em;text-transform:uppercase;border-radius:999px;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .endb.on{display:block}
 .endb:active{transform:translateX(-50%) scale(.96)}
 </style>
-
 </head>
 <body>
 <div class="stage" id="stage">
@@ -115,10 +74,8 @@ transition:opacity .6s ease;
   </div>
   <div class="brand">RN · 2026</div>
 </div>
-
 <div class="prog" id="prog"></div>
 <button class="endb" id="endb">↻ Reiniciar</button>
-
 <div class="ov" id="ov">
   <div>
     <div class="ov-eye">Reconhecimento</div>
@@ -126,16 +83,10 @@ transition:opacity .6s ease;
     <div class="ov-sub">1º Trimestre · 2026</div>
   </div>
   <button class="btn-start" id="btnStart">▶&nbsp; Iniciar Apresentação</button>
-  <div class="ov-info">Espaço · iniciar &nbsp;|&nbsp; Seta → · próximo</div>
+  <div class="ov-info">Seta → · próximo &nbsp;|&nbsp; R · reiniciar</div>
 </div>
-
 <script>
-var names=[
-  "FRANCISCO FELIX DA SILVA JUNIOR",
-  "LUCIANNE DABES HADDAD GOMES",
-  "FRANCISCO OZIAN AMARAL DE SOUZA",
-  "DIOGO VIANA DE CARVALHO"
-];
+var names=["JOSE PETRUCIO RODRIGUES DE AZEVEDO","SHEYLA PATRICIA DA SILVA CORTES AMORIM","LEILA JANAINA RIBEIRO OLIVEIRA","JAISA SOUZA DE ALCANIZ","PAULO RICARDO DE OLIVEIRA","LEINA SUELLY GARCIA WATHIER","NAYARA BRUNA FELIX SILVA DE SOUSA","ALEXANDRE DISRAELLE FERNANDES DA SILVA","ARICIA MORAIS DE MEDEIROS"];
 var DUR=7000;
 var stage=document.getElementById('stage');
 var brand=document.querySelector('.brand');
@@ -144,72 +95,64 @@ var ov=document.getElementById('ov');
 var endb=document.getElementById('endb');
 
 for(var i=0;i<names.length;i++){
-  var d=document.createElement('div');
-  d.className='slide';d.id='s'+(i+1);
-  var n=(i+1<10?'0'+(i+1):''+(i+1));
-  var t=(names.length<10?'0'+names.length:''+names.length);
-  d.innerHTML='<div class="sp"></div>'+
-    '<div class="nn">'+n+' / '+t+'</div>'+
-    '<div class="nl">Destaque</div>'+
-    '<div class="nt">'+names[i]+'</div>'+
-    '<div class="nb"></div>'+
-    '<div class="nk">1º Trimestre · 2026</div>';
-  stage.insertBefore(d,brand);
+var d=document.createElement(‘div’);
+d.className=‘slide’;d.id=‘s’+(i+1);
+var n=((i+1)<10?‘0’+(i+1):’’+(i+1));
+var tt=(names.length<10?‘0’+names.length:’’+names.length);
+d.innerHTML=’<div class="sp"></div><div class="nn">’+n+’ / ‘+tt+’</div><div class="nl">Destaque</div><div class="nt">’+names[i]+’</div><div class="nb"></div><div class="nk">1º Trimestre · 2026</div>’;
+stage.insertBefore(d,brand);
 }
 
 var cur=0,tmr=null,raf=null,playing=false,done=false,t0=0;
 var total=names.length+1;
 
-function getSl(i){return document.getElementById('s'+i)}
+function getSl(i){return document.getElementById(‘s’+i)}
 
-function show(i){
-  for(var j=0;j<total;j++){var s=getSl(j);if(s){s.classList.remove('active')}}
-  var s=getSl(i);if(s){void s.offsetWidth;s.classList.add('active')}
+function show(idx){
+for(var j=0;j<total;j++){var s=getSl(j);if(s)s.classList.remove(‘active’)}
+var s=getSl(idx);if(s){void s.offsetWidth;s.classList.add(‘active’)}
 }
 
 function tick(){
-  if(!playing)return;
-  var e=Date.now()-t0;
-  prog.style.width=Math.min(100,(e/DUR)*100)+'%';
-  if(e<DUR){raf=requestAnimationFrame(tick)}
+if(!playing)return;
+var e=Date.now()-t0;
+prog.style.width=Math.min(100,(e/DUR)*100)+’%’;
+if(e<DUR)raf=requestAnimationFrame(tick);
 }
 
 function startTimer(){
-  if(tmr)clearTimeout(tmr);
-  if(raf)cancelAnimationFrame(raf);
-  t0=Date.now();prog.style.width='0%';prog.classList.add('on');
-  tick();
-  tmr=setTimeout(next,DUR);
+if(tmr)clearTimeout(tmr);if(raf)cancelAnimationFrame(raf);
+t0=Date.now();prog.style.width=‘0%’;prog.classList.add(‘on’);
+tick();tmr=setTimeout(next,DUR);
 }
 
 function next(){
-  cur++;
-  if(cur>names.length){
-    playing=false;done=true;
-    if(tmr)clearTimeout(tmr);if(raf)cancelAnimationFrame(raf);
-    prog.classList.remove('on');prog.style.width='0%';
-    show(0);endb.classList.add('on');
-    return;
-  }
-  show(cur);startTimer();
+cur++;
+if(cur>names.length){
+playing=false;done=true;
+if(tmr)clearTimeout(tmr);if(raf)cancelAnimationFrame(raf);
+prog.classList.remove(‘on’);prog.style.width=‘0%’;
+show(0);endb.classList.add(‘on’);
+return;
+}
+show(cur);startTimer();
 }
 
 function start(){
-  ov.classList.add('hidden');endb.classList.remove('on');
-  cur=0;playing=true;done=false;
-  show(0);startTimer();
-  var el=document.documentElement;
-  if(el.requestFullscreen){try{el.requestFullscreen()}catch(e){}}
-  else if(el.webkitRequestFullscreen){try{el.webkitRequestFullscreen()}catch(e){}}
+ov.classList.add(‘hidden’);endb.classList.remove(‘on’);
+cur=0;playing=true;done=false;
+show(0);startTimer();
+var el=document.documentElement;
+if(el.requestFullscreen){try{el.requestFullscreen()}catch(e){}}
+else if(el.webkitRequestFullscreen){try{el.webkitRequestFullscreen()}catch(e){}}
 }
 
-document.getElementById('btnStart').addEventListener('click',start);
-endb.addEventListener('click',start);
-
-document.addEventListener('keydown',function(e){
-  if(e.code==='Space'){e.preventDefault();if(!playing)start()}
-  else if(e.code==='ArrowRight'&&playing){if(tmr)clearTimeout(tmr);if(raf)cancelAnimationFrame(raf);next()}
-  else if(e.code==='KeyR'){start()}
+document.getElementById(‘btnStart’).addEventListener(‘click’,start);
+endb.addEventListener(‘click’,start);
+document.addEventListener(‘keydown’,function(e){
+if(e.code===‘Space’){e.preventDefault();if(!playing)start()}
+else if(e.code===‘ArrowRight’&&playing){if(tmr)clearTimeout(tmr);if(raf)cancelAnimationFrame(raf);next()}
+else if(e.code===‘KeyR’){start()}
 });
 </script>
 
