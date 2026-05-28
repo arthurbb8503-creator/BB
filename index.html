@@ -1,332 +1,722 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Destaques 1 Tri Regional RN</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#00091F}
-body{font-family:'Inter',sans-serif;position:fixed;inset:0}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carteira Clara</title>
+  <style>
+    :root {
+      --bg: #090b10;
+      --panel: #111722;
+      --panel-2: #151d2b;
+      --text: #f3f6fb;
+      --muted: #9ba8bc;
+      --line: rgba(255,255,255,0.09);
+      --green: #18d696;
+      --blue: #5d8cff;
+      --yellow: #f3c84b;
+      --red: #ff5b73;
+      --orange: #ff9d4d;
+      --shadow: 0 18px 45px rgba(0,0,0,0.32);
+      --radius: 18px;
+    }
 
-.bg{
-position:fixed;inset:0;
-background:
-radial-gradient(ellipse 80% 55% at 25% 20%,rgba(20,80,197,.55) 0%,transparent 60%),
-radial-gradient(ellipse 60% 50% at 78% 82%,rgba(0,158,96,.18) 0%,transparent 65%),
-linear-gradient(140deg,#00091F 0%,#001F5C 55%,#000A2A 100%);
-z-index:0;
-}
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(93,140,255,0.18), transparent 34%),
+        radial-gradient(circle at top right, rgba(24,214,150,0.11), transparent 28%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-/* Overlay de inicio */
-#overlay{
-position:fixed;inset:0;z-index:100;
-background:rgba(0,9,31,.96);
-display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vh;
-}
-#overlay.saindo{
-animation:fadeOut .5s ease forwards;
-}
-#overlay.fora{display:none}
-@keyframes fadeOut{to{opacity:0}}
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 22px 16px 96px;
+    }
 
-.ov-eyebrow{font-family:‘Space Grotesk’,sans-serif;font-size:.8rem;letter-spacing:.45em;color:#E5B643;text-transform:uppercase}
-.ov-titulo{font-weight:900;font-size:clamp(2.5rem,9vw,6rem);line-height:.88;letter-spacing:-.04em;
-background:linear-gradient(180deg,#fff 0%,#B8D0FF 100%);
--webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-text-align:center}
-.ov-sub{font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.9rem,2vw,1.2rem);
-letter-spacing:.3em;color:rgba(255,255,255,.85);text-transform:uppercase;text-align:center}
-#btnPlay{
-margin-top:1vh;
-background:#fff;color:#001235;border:none;
-padding:1.2rem 3.2rem;
-font-family:‘Inter’,sans-serif;font-weight:900;font-size:1.05rem;letter-spacing:.2em;
-text-transform:uppercase;border-radius:999px;cursor:pointer;
-box-shadow:0 8px 32px rgba(20,80,197,.5);
-}
-#btnPlay:hover{background:#eef3ff}
-#btnPlay:active{transform:scale(.97)}
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
 
-/* Slides */
-#slides{position:fixed;inset:0;z-index:10}
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-.slide{
-position:absolute;inset:0;
-display:flex;flex-direction:column;align-items:center;justify-content:center;
-padding:6vh 6vw;
-visibility:hidden;opacity:0;
-}
-.slide.visivel{visibility:visible;opacity:1}
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #061018;
+      box-shadow: var(--shadow);
+    }
 
-/* INTRO */
-.intro-label{
-font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.7rem,1.4vw,.95rem);
-letter-spacing:.45em;color:#E5B643;text-transform:uppercase;font-weight:500;
-margin-bottom:2.5vh;
-opacity:0;transform:translateY(8px);
-}
-.intro-main{
-font-weight:900;font-size:clamp(3.5rem,14vw,11rem);line-height:.88;letter-spacing:-.045em;
-background:linear-gradient(180deg,#fff 0%,#B8D0FF 100%);
--webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-text-align:center;margin-bottom:3vh;
-opacity:0;transform:translateY(16px) scale(1.04);filter:blur(12px);
-}
-.intro-linha{width:0;height:2px;background:#E5B643;margin:0 auto 3vh}
-.intro-periodo{
-font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.9rem,2vw,1.4rem);
-letter-spacing:.32em;color:rgba(255,255,255,.95);text-transform:uppercase;
-margin-bottom:4vh;text-align:center;
-opacity:0;
-}
-.intro-regional{
-font-size:clamp(.8rem,1.4vw,1rem);letter-spacing:.22em;
-color:rgba(255,255,255,.7);text-transform:uppercase;font-weight:700;text-align:center;
-opacity:0;
-}
-.intro-regional .verde{color:#00A86B}
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 24px; letter-spacing: -0.04em; }
+    .subtitle { color: var(--muted); font-size: 13px; margin-top: 3px; }
 
-.slide.visivel .intro-label{animation:subir .9s .1s cubic-bezier(.2,.8,.2,1) forwards}
-.slide.visivel .intro-main{animation:surgir 1.4s .2s cubic-bezier(.2,.8,.2,1) forwards}
-.slide.visivel .intro-linha{animation:crescer .9s 1s cubic-bezier(.2,.8,.2,1) forwards}
-.slide.visivel .intro-periodo{animation:subir .9s 1.2s cubic-bezier(.2,.8,.2,1) forwards}
-.slide.visivel .intro-regional{animation:subir .9s 1.4s cubic-bezier(.2,.8,.2,1) forwards}
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
 
-@keyframes surgir{
-0%{opacity:0;transform:translateY(16px) scale(1.04);filter:blur(12px)}
-100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
-}
-@keyframes subir{to{opacity:1;transform:translateY(0)}}
-@keyframes crescer{to{width:clamp(80px,14vw,200px)}}
+    button, .btn {
+      border: 0;
+      border-radius: 13px;
+      padding: 11px 14px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #061018;
+      background: var(--green);
+      transition: transform .12s ease, opacity .12s ease, background .12s ease;
+      font-size: 14px;
+    }
 
-/* NOME */
-.nome-num{position:absolute;top:6vh;left:6vw;font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.75rem,1.2vw,.9rem);letter-spacing:.32em;color:#E5B643;text-transform:uppercase;opacity:0}
-.nome-label{position:absolute;top:6vh;right:6vw;font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.75rem,1.2vw,.9rem);letter-spacing:.45em;color:rgba(255,255,255,.5);text-transform:uppercase;opacity:0}
-.nome-texto{
-font-weight:900;font-size:clamp(2rem,calc(4.5vw + 2.5vh),7.5rem);
-line-height:.95;letter-spacing:-.025em;text-align:center;max-width:92vw;
-color:#fff;text-transform:uppercase;word-wrap:break-word;
-opacity:0;filter:blur(22px);transform:scale(1.07);
-text-shadow:0 0 50px rgba(184,208,255,.2);
-}
-.nome-barra{width:0;height:3px;background:#E5B643;margin-top:4vh;box-shadow:0 0 16px rgba(229,182,67,.4)}
-.nome-sub{font-family:‘Space Grotesk’,sans-serif;font-size:clamp(.7rem,1.2vw,.9rem);letter-spacing:.42em;color:rgba(255,255,255,.6);text-transform:uppercase;margin-top:3vh;opacity:0;text-align:center}
-.nome-glow{position:absolute;inset:0;background:radial-gradient(ellipse 55% 45% at center,rgba(184,208,255,.15) 0%,transparent 70%);opacity:0;pointer-events:none}
+    button:hover { transform: translateY(-1px); }
+    button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
+    button.blue { background: var(--blue); color: white; }
+    button.danger { background: rgba(255,91,115,.15); color: #ff91a1; border: 1px solid rgba(255,91,115,.35); }
+    button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+    button.small { padding: 8px 10px; font-size: 12px; border-radius: 10px; }
 
-.slide.visivel .nome-num{animation:aparecer .6s .35s ease forwards}
-.slide.visivel .nome-label{animation:aparecer .6s .5s ease forwards}
-.slide.visivel .nome-texto{animation:explodir 1s cubic-bezier(.15,.85,.2,1) forwards}
-.slide.visivel .nome-barra{animation:crescer2 .7s .65s cubic-bezier(.2,.8,.2,1) forwards}
-.slide.visivel .nome-sub{animation:aparecer .8s .9s ease forwards}
-.slide.visivel .nome-glow{animation:brilho 1.2s ease forwards}
+    nav {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 18px 0;
+      background: rgba(17,23,34,.68);
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+    }
 
-@keyframes explodir{
-0%{opacity:0;transform:scale(1.07);filter:blur(22px)}
-55%{opacity:1}
-100%{opacity:1;transform:scale(1);filter:blur(0)}
-}
-@keyframes aparecer{to{opacity:1}}
-@keyframes crescer2{to{width:clamp(120px,22vw,320px)}}
-@keyframes brilho{
-0%{opacity:0;transform:scale(.88)}
-40%{opacity:.85;transform:scale(1.04)}
-100%{opacity:.45;transform:scale(1)}
-}
+    .tab {
+      background: transparent;
+      color: var(--muted);
+      border: 0;
+      padding: 12px 8px;
+      border-radius: 13px;
+    }
+    .tab.active { background: var(--panel-2); color: var(--text); }
 
-/* Barra de progresso */
-#barra{
-position:fixed;bottom:0;left:0;height:3px;width:0;z-index:50;
-background:linear-gradient(90deg,#E5B643,#FFD978);
-box-shadow:0 0 10px rgba(229,182,67,.6);
-display:none;
-}
+    .section { display: none; }
+    .section.active { display: block; }
 
-/* Botao reiniciar */
-#btnReiniciar{
-position:fixed;bottom:5vh;left:50%;transform:translateX(-50%);
-z-index:60;display:none;
-background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);
-color:rgba(255,255,255,.85);padding:.75rem 1.8rem;
-font-family:‘Space Grotesk’,sans-serif;font-size:.75rem;letter-spacing:.25em;
-text-transform:uppercase;border-radius:999px;cursor:pointer;
-}
-#btnReiniciar.visivel{display:block}
+    .hero {
+      background: linear-gradient(135deg, rgba(21,29,43,.96), rgba(17,23,34,.84));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
 
-.marca{position:fixed;bottom:4vh;right:4vw;z-index:20;font-family:‘Space Grotesk’,sans-serif;font-size:.65rem;letter-spacing:.35em;color:rgba(255,255,255,.25);text-transform:uppercase;pointer-events:none}
-</style>
+    .hero-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
 
+    .hero h2 { font-size: 25px; letter-spacing: -0.04em; margin-bottom: 6px; }
+    .hero p { color: var(--muted); line-height: 1.45; font-size: 14px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .grid.two { grid-template-columns: repeat(2, 1fr); }
+    .grid.three { grid-template-columns: repeat(3, 1fr); }
+
+    .card {
+      background: rgba(17,23,34,.92);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 12px 34px rgba(0,0,0,.18);
+    }
+
+    .metric-label { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+    .metric-value { font-size: 25px; font-weight: 900; letter-spacing: -0.04em; margin-top: 8px; }
+    .metric-hint { color: var(--muted); margin-top: 5px; font-size: 12px; }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin: 16px 0 12px;
+      flex-wrap: wrap;
+    }
+
+    .search {
+      flex: 1;
+      min-width: 220px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0 12px;
+    }
+
+    .search input { border: 0; background: transparent; padding: 12px 0; color: var(--text); outline: 0; width: 100%; }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #0c111b;
+      color: var(--text);
+      padding: 12px 12px;
+      border-radius: 13px;
+      outline: none;
+      font-size: 14px;
+    }
+
+    textarea { min-height: 92px; resize: vertical; }
+    label { display: block; color: var(--muted); font-size: 12px; font-weight: 800; margin-bottom: 7px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    tr:hover td { background: rgba(255,255,255,0.025); }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .status.ok { background: rgba(24,214,150,.12); color: #6ff1bf; }
+    .status.warn { background: rgba(243,200,75,.13); color: #ffd867; }
+    .status.bad { background: rgba(255,91,115,.14); color: #ff91a1; }
+    .status.neutral { background: rgba(93,140,255,.13); color: #9bb8ff; }
+
+    .row-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 34px 20px;
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      background: rgba(17,23,34,.54);
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.62);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      width: min(760px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      background: #0d131f;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .pill { color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px; font-size: 12px; }
+
+    .notice {
+      border: 1px solid rgba(243,200,75,.25);
+      background: rgba(243,200,75,.08);
+      color: #ffe293;
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .mini-list { display: grid; gap: 10px; }
+    .mini-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+    }
+    .mini-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .mini-title { font-weight: 900; }
+    .mini-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+    .right { text-align: right; }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .yellow { color: var(--yellow); }
+    .muted { color: var(--muted); }
+
+    @media (max-width: 860px) {
+      header { align-items: flex-start; }
+      .grid, .grid.two, .grid.three { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      nav { grid-template-columns: repeat(3, 1fr); }
+      .metric-value { font-size: 23px; }
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { display: none; }
+      tr { border-bottom: 1px solid var(--line); padding: 10px 0; }
+      td { border-bottom: 0; padding: 7px 2px; }
+      td::before {
+        content: attr(data-label);
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        margin-bottom: 2px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .app { padding: 16px 12px 96px; }
+      h1 { font-size: 21px; }
+      .hero h2 { font-size: 22px; }
+      nav { grid-template-columns: repeat(2, 1fr); }
+      .top-actions { width: 100%; justify-content: stretch; }
+      .top-actions button { flex: 1; }
+    }
+  </style>
 </head>
 <body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">CC</div>
+        <div>
+          <h1>Carteira Clara</h1>
+          <p class="subtitle">Controle simples de valores emprestados, juros por período e pagamentos.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button onclick="openPersonModal()">+ Pessoa</button>
+        <button class="blue" onclick="openLoanModal()">+ Operação</button>
+      </div>
+    </header>
 
-<div class="bg"></div>
+    <nav>
+      <button class="tab active" data-tab="dashboard" onclick="showTab('dashboard')">Resumo</button>
+      <button class="tab" data-tab="operations" onclick="showTab('operations')">Operações</button>
+      <button class="tab" data-tab="people" onclick="showTab('people')">Pessoas</button>
+      <button class="tab" data-tab="payments" onclick="showTab('payments')">Pagamentos</button>
+      <button class="tab" data-tab="settings" onclick="showTab('settings')">Dados</button>
+    </nav>
 
-<div id="slides">
-  <!-- slide 0: intro, criado fixo no HTML -->
-  <div class="slide" id="s0">
-    <div class="intro-label">Reconhecimento</div>
-    <div class="intro-main">DESTAQUES</div>
-    <div class="intro-linha"></div>
-    <div class="intro-periodo">1 Trimestre &middot; 2026</div>
-    <div class="intro-regional">Regional <span class="verde">Rio Grande do Norte</span></div>
+    <section id="dashboard" class="section active">
+      <div class="hero">
+        <div class="hero-row">
+          <div>
+            <h2>Resumo da carteira</h2>
+            <p>Juros sem capitalização. O saldo atualizado soma capital em aberto + juros vencidos não pagos.</p>
+          </div>
+          <button class="secondary" onclick="refreshAll()">Atualizar valores</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card"><div class="metric-label">Saldo devedor hoje</div><div id="mSaldo" class="metric-value">R$ 0,00</div><div class="metric-hint">Capital aberto + juros vencidos</div></div>
+        <div class="card"><div class="metric-label">Capital em aberto</div><div id="mCapital" class="metric-value">R$ 0,00</div><div class="metric-hint">Principal ainda não amortizado</div></div>
+        <div class="card"><div class="metric-label">Juros vencidos</div><div id="mJurosVencidos" class="metric-value yellow">R$ 0,00</div><div class="metric-hint">Juros não pagos</div></div>
+        <div class="card"><div class="metric-label">Lucro recebido</div><div id="mLucro" class="metric-value green">R$ 0,00</div><div class="metric-hint">Juros efetivamente pagos</div></div>
+      </div>
+
+      <div class="toolbar"><h2>Alertas</h2></div>
+      <div class="grid two">
+        <div class="card">
+          <h3>Operações que pedem atenção</h3>
+          <div id="alertList" class="mini-list" style="margin-top:14px"></div>
+        </div>
+        <div class="card">
+          <h3>Próximos vencimentos</h3>
+          <div id="dueList" class="mini-list" style="margin-top:14px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="operations" class="section">
+      <div class="hero">
+        <div class="hero-row">
+          <div>
+            <h2>Operações</h2>
+            <p>Abra cada operação para ver extrato, juros vencidos e registrar pagamentos.</p>
+          </div>
+          <button class="blue" onclick="openLoanModal()">Nova operação</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="search">🔎 <input id="loanSearch" placeholder="Buscar por nome ou observação" oninput="renderLoans()"></div>
+        <select id="loanFilter" style="max-width:220px" onchange="renderLoans()">
+          <option value="all">Todas</option>
+          <option value="open">Abertas</option>
+          <option value="late">Com atraso</option>
+          <option value="due">Vencem em até 7 dias</option>
+          <option value="closed">Quitadas</option>
+        </select>
+      </div>
+      <div class="card"><div id="loansTable"></div></div>
+    </section>
+
+    <section id="people" class="section">
+      <div class="hero">
+        <div class="hero-row">
+          <div>
+            <h2>Pessoas</h2>
+            <p>Cadastre familiares, amigos ou vizinhos e acompanhe o total por pessoa.</p>
+          </div>
+          <button onclick="openPersonModal()">Nova pessoa</button>
+        </div>
+      </div>
+      <div class="card"><div id="peopleTable"></div></div>
+    </section>
+
+    <section id="payments" class="section">
+      <div class="hero">
+        <div class="hero-row">
+          <div>
+            <h2>Pagamentos</h2>
+            <p>Histórico de pagamentos registrados, separado entre juros e amortização de capital.</p>
+          </div>
+          <button class="blue" onclick="openPaymentModal()">Registrar pagamento</button>
+        </div>
+      </div>
+      <div class="card"><div id="paymentsTable"></div></div>
+    </section>
+
+    <section id="settings" class="section">
+      <div class="hero">
+        <h2>Dados e segurança</h2>
+        <p>Os dados ficam salvos neste navegador. Exporte backup com frequência se for usar de verdade.</p>
+      </div>
+      <div class="grid two">
+        <div class="card">
+          <h3>Backup</h3>
+          <p class="subtitle" style="margin:8px 0 14px">Baixe um arquivo com todos os dados cadastrados.</p>
+          <button onclick="exportData()">Exportar JSON</button>
+        </div>
+        <div class="card">
+          <h3>Importar</h3>
+          <p class="subtitle" style="margin:8px 0 14px">Restaure um backup gerado por este site.</p>
+          <input type="file" id="importFile" accept="application/json" onchange="importData(event)">
+        </div>
+        <div class="card">
+          <h3>Dados de exemplo</h3>
+          <p class="subtitle" style="margin:8px 0 14px">Carregue exemplos para testar a lógica.</p>
+          <button class="secondary" onclick="loadSampleData()">Carregar exemplos</button>
+        </div>
+        <div class="card">
+          <h3>Apagar tudo</h3>
+          <p class="subtitle" style="margin:8px 0 14px">Remove todos os cadastros deste navegador.</p>
+          <button class="danger" onclick="wipeData()">Apagar dados</button>
+        </div>
+      </div>
+    </section>
   </div>
-  <!-- slides de nome injetados pelo JS -->
-</div>
 
-<div id="barra"></div>
-<button id="btnReiniciar">&#8635; Reiniciar</button>
-<div class="marca">RN &middot; 2026</div>
+  <div id="personModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-head"><div><h2 id="personModalTitle">Nova pessoa</h2><p class="subtitle">Cadastre quem recebeu ou pode receber valores.</p></div><button class="ghost small" onclick="closeModal('personModal')">Fechar</button></div>
+      <form id="personForm" onsubmit="savePerson(event)">
+        <input type="hidden" id="personId">
+        <div class="form-grid">
+          <div><label>Nome</label><input id="personName" required placeholder="Ex: João Silva"></div>
+          <div><label>Telefone / WhatsApp</label><input id="personPhone" placeholder="(84) 99999-9999"></div>
+          <div><label>Relação</label><input id="personRelation" placeholder="Primo, tio, vizinho..."></div>
+          <div><label>Status</label><select id="personStatus"><option>Ativo</option><option>Atenção</option><option>Evitar novo crédito</option><option>Quitado</option></select></div>
+          <div class="full"><label>Observações</label><textarea id="personNotes" placeholder="Informações úteis, combinado, histórico..."></textarea></div>
+        </div>
+        <div class="toolbar"><span></span><button>Salvar pessoa</button></div>
+      </form>
+    </div>
+  </div>
 
-<div id="overlay">
-  <div class="ov-eyebrow">Reconhecimento</div>
-  <div class="ov-titulo">DESTAQUES</div>
-  <div class="ov-sub">1&ordm; Trimestre &middot; 2026 &middot; Regional RN</div>
-  <button id="btnPlay">&#9654;&nbsp;&nbsp;INICIAR</button>
-</div>
+  <div id="loanModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-head"><div><h2 id="loanModalTitle">Nova operação</h2><p class="subtitle">A taxa é por período. Ex: 10% a cada 10 dias.</p></div><button class="ghost small" onclick="closeModal('loanModal')">Fechar</button></div>
+      <div class="notice">Nesta versão, juros não capitalizam. Se o juros vencer e não for pago, ele fica como juros em aberto, mas o próximo juros continua sendo calculado sobre o capital atual.</div>
+      <form id="loanForm" onsubmit="saveLoan(event)">
+        <input type="hidden" id="loanId">
+        <div class="form-grid">
+          <div class="full"><label>Pessoa</label><select id="loanPerson" required></select></div>
+          <div><label>Data do empréstimo</label><input id="loanDate" type="date" required></div>
+          <div><label>Valor emprestado</label><input id="loanAmount" type="number" min="0" step="0.01" required placeholder="1000,00"></div>
+          <div><label>Taxa de juros por período (%)</label><input id="loanRate" type="number" min="0" step="0.01" required placeholder="10"></div>
+          <div><label>Período da taxa</label><select id="loanPeriodDays"><option value="5">A cada 5 dias</option><option value="10" selected>A cada 10 dias</option><option value="15">A cada 15 dias</option><option value="30">A cada 30 dias</option><option value="custom">Personalizado</option></select></div>
+          <div><label>Dias do período personalizado</label><input id="loanCustomDays" type="number" min="1" step="1" placeholder="Ex: 20"></div>
+          <div><label>Primeiro vencimento</label><input id="loanFirstDue" type="date"></div>
+          <div><label>Status</label><select id="loanStatus"><option value="open">Aberta</option><option value="closed">Quitada</option><option value="paused">Pausada</option><option value="renegotiated">Renegociada</option></select></div>
+          <div class="full"><label>Observações do combinado</label><textarea id="loanNotes" placeholder="Ex: juros pagos de 10 em 10 dias, capital quando puder..."></textarea></div>
+        </div>
+        <div class="toolbar"><span></span><button>Salvar operação</button></div>
+      </form>
+    </div>
+  </div>
 
-<script>
-var NOMES = [
-  "JOSE PETRUCIO RODRIGUES DE AZEVEDO",
-  "SHEYLA PATRICIA DA SILVA CORTES AMORIM",
-  "LEILA JANAINA RIBEIRO OLIVEIRA",
-  "JAISA SOUZA DE ALCANIZ",
-  "PAULO RICARDO DE OLIVEIRA",
-  "LEINA SUELLY GARCIA WATHIER",
-  "NAYARA BRUNA FELIX SILVA DE SOUSA",
-  "ALEXANDRE DISRAELLE FERNANDES DA SILVA",
-  "ARICIA MORAIS DE MEDEIROS"
-];
+  <div id="paymentModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-head"><div><h2>Registrar pagamento</h2><p class="subtitle">Separe o que foi juros e o que foi amortização de capital.</p></div><button class="ghost small" onclick="closeModal('paymentModal')">Fechar</button></div>
+      <form id="paymentForm" onsubmit="savePayment(event)">
+        <input type="hidden" id="paymentLoanPreset">
+        <div class="form-grid">
+          <div class="full"><label>Operação</label><select id="paymentLoan" required onchange="suggestPaymentSplit()"></select></div>
+          <div><label>Data do pagamento</label><input id="paymentDate" type="date" required></div>
+          <div><label>Valor total recebido</label><input id="paymentTotal" type="number" min="0" step="0.01" required oninput="suggestPaymentSplit()"></div>
+          <div><label>Parte para juros</label><input id="paymentInterest" type="number" min="0" step="0.01" required></div>
+          <div><label>Parte para capital</label><input id="paymentPrincipal" type="number" min="0" step="0.01" required></div>
+          <div class="full"><label>Observação</label><textarea id="paymentNotes" placeholder="Ex: Pix recebido, pagamento parcial dos juros..."></textarea></div>
+        </div>
+        <div class="pill-row"><span class="pill">Sugestão: primeiro quitar juros em aberto</span><button type="button" class="secondary small" onclick="suggestPaymentSplit(true)">Aplicar sugestão</button></div>
+        <div class="toolbar"><span></span><button>Salvar pagamento</button></div>
+      </form>
+    </div>
+  </div>
 
-var DURACAO = 7000; // ms por slide
+  <div id="detailModal" class="modal-backdrop">
+    <div class="modal" style="width:min(920px,100%)">
+      <div class="modal-head"><div><h2 id="detailTitle">Operação</h2><p id="detailSub" class="subtitle"></p></div><button class="ghost small" onclick="closeModal('detailModal')">Fechar</button></div>
+      <div id="detailContent"></div>
+    </div>
+  </div>
 
-// Injeta slides de nome
-var slidesEl = document.getElementById('slides');
-for (var i = 0; i < NOMES.length; i++) {
-  var n = i + 1;
-  var num = (n < 10 ? '0' + n : '' + n);
-  var tot = (NOMES.length < 10 ? '0' + NOMES.length : '' + NOMES.length);
-  var div = document.createElement('div');
-  div.className = 'slide';
-  div.id = 's' + n;
-  div.innerHTML =
-    '<div class="nome-glow"></div>' +
-    '<div class="nome-num">' + num + ' / ' + tot + '</div>' +
-    '<div class="nome-label">Destaque</div>' +
-    '<div class="nome-texto">' + NOMES[i] + '</div>' +
-    '<div class="nome-barra"></div>' +
-    '<div class="nome-sub">1&ordm; Trimestre &middot; 2026</div>';
-  slidesEl.appendChild(div);
-}
+  <script>
+    const STORAGE_KEY = 'carteira_clara_v1';
+    let state = { people: [], loans: [], payments: [] };
 
-var total = NOMES.length + 1; // intro + nomes
-var cur = 0;
-var tmr = null;
-var rafId = null;
-var playing = false;
-var t0 = 0;
+    function uid(prefix) { return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+    function todayISO() { return new Date().toISOString().slice(0,10); }
+    function parseDate(v) { const [y,m,d] = v.split('-').map(Number); return new Date(y, m-1, d); }
+    function formatDate(v) { if (!v) return '-'; const d = parseDate(v); return d.toLocaleDateString('pt-BR'); }
+    function money(v) { return Number(v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
+    function daysBetween(a, b) { const ms = 24*60*60*1000; return Math.floor((parseDate(b) - parseDate(a)) / ms); }
+    function addDays(dateISO, days) { const d = parseDate(dateISO); d.setDate(d.getDate() + Number(days)); return d.toISOString().slice(0,10); }
+    function clampMoney(v) { return Math.max(0, Math.round(Number(v || 0) * 100) / 100); }
 
-var barraEl = document.getElementById('barra');
-var btnReiniciarEl = document.getElementById('btnReiniciar');
-var overlayEl = document.getElementById('overlay');
+    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    function loadState() { try { state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || state; } catch(e) {} }
 
-function getSlide(i) {
-  return document.getElementById('s' + i);
-}
+    function getPerson(id) { return state.people.find(p => p.id === id); }
+    function getLoan(id) { return state.loans.find(l => l.id === id); }
+    function loanPayments(loanId) { return state.payments.filter(p => p.loanId === loanId).sort((a,b) => a.date.localeCompare(b.date)); }
+    function periodDays(loan) { return loan.periodDays === 'custom' ? Number(loan.customDays || 1) : Number(loan.periodDays || 30); }
 
-// Mostra um slide: remove visivel de todos, recria o nó pra forcar reinicio de animacao
-function mostrarSlide(idx) {
-  for (var j = 0; j < total; j++) {
-    var s = getSlide(j);
-    if (s) s.classList.remove('visivel');
-  }
-  var alvo = getSlide(idx);
-  if (!alvo) return;
-  // Forcar reflow no proprio elemento para reiniciar animacoes dos filhos
-  alvo.classList.remove('visivel');
-  alvo.style.display = 'none';
-  void alvo.offsetHeight; // flush
-  alvo.style.display = '';
-  void alvo.offsetHeight; // flush novamente
-  alvo.classList.add('visivel');
-}
+    function calcLoan(loan, asOf = todayISO()) {
+      const payments = loanPayments(loan.id);
+      const paidInterest = payments.reduce((s,p) => s + Number(p.interest || 0), 0);
+      const paidPrincipal = payments.reduce((s,p) => s + Number(p.principal || 0), 0);
+      const principal = clampMoney(Number(loan.amount || 0) - paidPrincipal);
+      const pdays = periodDays(loan);
+      const firstDue = loan.firstDue || addDays(loan.date, pdays);
+      let periodsDue = 0;
+      if (loan.status !== 'closed' && asOf >= firstDue) {
+        periodsDue = Math.floor(daysBetween(firstDue, asOf) / pdays) + 1;
+      }
+      const interestPerPeriod = clampMoney(principal * (Number(loan.rate || 0) / 100));
+      const interestAccrued = clampMoney(periodsDue * interestPerPeriod);
+      const unpaidInterest = clampMoney(interestAccrued - paidInterest);
+      const balance = loan.status === 'closed' ? 0 : clampMoney(principal + unpaidInterest);
+      let nextDue = firstDue;
+      if (asOf >= firstDue) nextDue = addDays(firstDue, periodsDue * pdays);
+      const overduePeriods = unpaidInterest > 0 ? Math.ceil(unpaidInterest / Math.max(interestPerPeriod, 0.01)) : 0;
+      return { paidInterest, paidPrincipal, principal, periodsDue, interestPerPeriod, interestAccrued, unpaidInterest, balance, nextDue, overduePeriods };
+    }
 
-function tick() {
-  if (!playing) return;
-  var elapsed = Date.now() - t0;
-  var pct = Math.min(100, (elapsed / DURACAO) * 100);
-  barraEl.style.width = pct + '%';
-  if (elapsed < DURACAO) {
-    rafId = requestAnimationFrame(tick);
-  }
-}
+    function portfolio() {
+      return state.loans.reduce((acc, loan) => {
+        const c = calcLoan(loan);
+        if (loan.status !== 'closed') {
+          acc.balance += c.balance;
+          acc.principal += c.principal;
+          acc.unpaidInterest += c.unpaidInterest;
+          if (c.unpaidInterest > 0) acc.late += 1;
+        }
+        acc.profit += c.paidInterest;
+        acc.recovered += c.paidPrincipal;
+        return acc;
+      }, { balance:0, principal:0, unpaidInterest:0, profit:0, recovered:0, late:0 });
+    }
 
-function iniciarTimer() {
-  if (tmr) clearTimeout(tmr);
-  if (rafId) cancelAnimationFrame(rafId);
-  t0 = Date.now();
-  barraEl.style.width = '0%';
-  barraEl.style.display = 'block';
-  tick();
-  tmr = setTimeout(avancar, DURACAO);
-}
+    function showTab(tab) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+      refreshAll();
+    }
 
-function avancar() {
-  cur++;
-  if (cur >= total) {
-    // Fim: volta pro intro e para
-    playing = false;
-    if (tmr) clearTimeout(tmr);
-    if (rafId) cancelAnimationFrame(rafId);
-    barraEl.style.display = 'none';
-    mostrarSlide(0);
-    btnReiniciarEl.classList.add('visivel');
-    return;
-  }
-  mostrarSlide(cur);
-  iniciarTimer();
-}
+    function refreshAll() { renderPersonOptions(); renderDashboard(); renderLoans(); renderPeople(); renderPayments(); renderPaymentOptions(); saveState(); }
 
-function iniciar() {
-  // Esconde overlay
-  overlayEl.classList.add('saindo');
-  setTimeout(function() { overlayEl.classList.add('fora'); }, 520);
+    function renderDashboard() {
+      const p = portfolio();
+      mSaldo.textContent = money(p.balance);
+      mCapital.textContent = money(p.principal);
+      mJurosVencidos.textContent = money(p.unpaidInterest);
+      mLucro.textContent = money(p.profit);
 
-  btnReiniciarEl.classList.remove('visivel');
-  cur = 0;
-  playing = true;
+      const alerts = state.loans.filter(l => l.status !== 'closed').map(l => ({loan:l, c:calcLoan(l), person:getPerson(l.personId)})).filter(x => x.c.unpaidInterest > 0 || daysBetween(todayISO(), x.c.nextDue) <= 2).sort((a,b) => b.c.unpaidInterest - a.c.unpaidInterest).slice(0,6);
+      alertList.innerHTML = alerts.length ? alerts.map(x => `<div class="mini-item"><div><div class="mini-title">${x.person?.name || 'Sem nome'}</div><div class="mini-sub">${x.c.unpaidInterest > 0 ? 'Juros em aberto: ' + money(x.c.unpaidInterest) : 'Vencimento próximo'}</div></div><div class="right"><span class="status ${x.c.unpaidInterest > 0 ? 'bad' : 'warn'}">${x.c.unpaidInterest > 0 ? 'Atenção' : 'Vence logo'}</span></div></div>`).join('') : '<div class="empty">Nenhum alerta relevante agora.</div>';
 
-  mostrarSlide(0);
-  iniciarTimer();
-}
+      const due = state.loans.filter(l => l.status !== 'closed').map(l => ({loan:l, c:calcLoan(l), person:getPerson(l.personId), days:daysBetween(todayISO(), calcLoan(l).nextDue)})).filter(x => x.days >= 0 && x.days <= 10).sort((a,b) => a.days - b.days).slice(0,6);
+      dueList.innerHTML = due.length ? due.map(x => `<div class="mini-item"><div><div class="mini-title">${x.person?.name || 'Sem nome'}</div><div class="mini-sub">${money(x.c.interestPerPeriod)} em ${formatDate(x.c.nextDue)}</div></div><div class="right"><span class="status neutral">${x.days === 0 ? 'Hoje' : x.days + ' dias'}</span></div></div>`).join('') : '<div class="empty">Nenhum vencimento nos próximos 10 dias.</div>';
+    }
 
-document.getElementById('btnPlay').addEventListener('click', function() {
-  iniciar();
-});
+    function loanStatusLabel(loan, c) {
+      if (loan.status === 'closed') return '<span class="status ok">Quitada</span>';
+      if (loan.status === 'paused') return '<span class="status neutral">Pausada</span>';
+      if (loan.status === 'renegotiated') return '<span class="status neutral">Renegociada</span>';
+      if (c.unpaidInterest > 0) return '<span class="status bad">Juros em aberto</span>';
+      const d = daysBetween(todayISO(), c.nextDue);
+      if (d <= 2) return '<span class="status warn">Vence logo</span>';
+      return '<span class="status ok">Em dia</span>';
+    }
 
-document.getElementById('btnReiniciar').addEventListener('click', function() {
-  overlayEl.classList.remove('saindo', 'fora');
-  void overlayEl.offsetHeight;
-  overlayEl.classList.add('saindo');
-  setTimeout(function() { overlayEl.classList.add('fora'); }, 10);
-  btnReiniciarEl.classList.remove('visivel');
-  cur = 0;
-  playing = true;
-  mostrarSlide(0);
-  iniciarTimer();
-});
+    function renderLoans() {
+      const q = (loanSearch?.value || '').toLowerCase();
+      const f = loanFilter?.value || 'all';
+      let rows = state.loans.map(l => ({ loan:l, c:calcLoan(l), person:getPerson(l.personId) }));
+      rows = rows.filter(x => {
+        const hay = `${x.person?.name || ''} ${x.loan.notes || ''}`.toLowerCase();
+        if (q && !hay.includes(q)) return false;
+        if (f === 'open' && x.loan.status === 'closed') return false;
+        if (f === 'closed' && x.loan.status !== 'closed') return false;
+        if (f === 'late' && x.c.unpaidInterest <= 0) return false;
+        if (f === 'due') { const d = daysBetween(todayISO(), x.c.nextDue); if (!(d >= 0 && d <= 7)) return false; }
+        return true;
+      });
+      if (!rows.length) { loansTable.innerHTML = '<div class="empty">Nenhuma operação encontrada.</div>'; return; }
+      loansTable.innerHTML = `<table><thead><tr><th>Pessoa</th><th>Capital</th><th>Juros aberto</th><th>Saldo hoje</th><th>Taxa</th><th>Próximo venc.</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.map(x => `<tr><td data-label="Pessoa"><strong>${x.person?.name || 'Pessoa removida'}</strong><div class="mini-sub">Início: ${formatDate(x.loan.date)}</div></td><td data-label="Capital">${money(x.c.principal)}</td><td data-label="Juros aberto" class="yellow">${money(x.c.unpaidInterest)}</td><td data-label="Saldo hoje"><strong>${money(x.c.balance)}</strong></td><td data-label="Taxa">${Number(x.loan.rate)}% / ${periodDays(x.loan)} dias</td><td data-label="Próximo venc.">${formatDate(x.c.nextDue)}</td><td data-label="Status">${loanStatusLabel(x.loan,x.c)}</td><td data-label="Ações"><div class="row-actions"><button class="small secondary" onclick="openDetail('${x.loan.id}')">Abrir</button><button class="small blue" onclick="openPaymentModal('${x.loan.id}')">Pagamento</button><button class="small ghost" onclick="openLoanModal('${x.loan.id}')">Editar</button></div></td></tr>`).join('')}</tbody></table>`;
+    }
 
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'ArrowRight' && playing) {
-    if (tmr) clearTimeout(tmr);
-    if (rafId) cancelAnimationFrame(rafId);
-    avancar();
-  } else if ((e.key === 'r' || e.key === 'R') && !playing) {
-    document.getElementById('btnReiniciar').click();
-  }
-});
-</script>
+    function renderPeople() {
+      if (!state.people.length) { peopleTable.innerHTML = '<div class="empty">Cadastre a primeira pessoa.</div>'; return; }
+      peopleTable.innerHTML = `<table><thead><tr><th>Nome</th><th>Relação</th><th>Telefone</th><th>Total aberto</th><th>Status</th><th>Ações</th></tr></thead><tbody>${state.people.map(p => {
+        const total = state.loans.filter(l => l.personId === p.id && l.status !== 'closed').reduce((s,l) => s + calcLoan(l).balance, 0);
+        return `<tr><td data-label="Nome"><strong>${p.name}</strong><div class="mini-sub">${p.notes || ''}</div></td><td data-label="Relação">${p.relation || '-'}</td><td data-label="Telefone">${p.phone || '-'}</td><td data-label="Total aberto"><strong>${money(total)}</strong></td><td data-label="Status"><span class="status neutral">${p.status || 'Ativo'}</span></td><td data-label="Ações"><div class="row-actions"><button class="small ghost" onclick="openPersonModal('${p.id}')">Editar</button><button class="small secondary" onclick="openLoanModal(null, '${p.id}')">Nova operação</button></div></td></tr>`
+      }).join('')}</tbody></table>`;
+    }
 
+    function renderPayments() {
+      const rows = [...state.payments].sort((a,b) => b.date.localeCompare(a.date));
+      if (!rows.length) { paymentsTable.innerHTML = '<div class="empty">Nenhum pagamento registrado.</div>'; return; }
+      paymentsTable.innerHTML = `<table><thead><tr><th>Data</th><th>Pessoa</th><th>Total</th><th>Juros</th><th>Capital</th><th>Observação</th></tr></thead><tbody>${rows.map(p => { const l=getLoan(p.loanId); const person=l?getPerson(l.personId):null; return `<tr><td data-label="Data">${formatDate(p.date)}</td><td data-label="Pessoa"><strong>${person?.name || '-'}</strong></td><td data-label="Total">${money(Number(p.interest)+Number(p.principal))}</td><td data-label="Juros" class="green">${money(p.interest)}</td><td data-label="Capital">${money(p.principal)}</td><td data-label="Observação">${p.notes || '-'}</td></tr>` }).join('')}</tbody></table>`;
+    }
+
+    function renderPersonOptions() {
+      const options = state.people.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      loanPerson.innerHTML = options || '<option value="">Cadastre uma pessoa primeiro</option>';
+    }
+
+    function renderPaymentOptions() {
+      const options = state.loans.filter(l => l.status !== 'closed').map(l => { const p=getPerson(l.personId); const c=calcLoan(l); return `<option value="${l.id}">${p?.name || 'Sem nome'} — saldo ${money(c.balance)} — ${Number(l.rate)}%/${periodDays(l)}d</option>`; }).join('');
+      paymentLoan.innerHTML = options || '<option value="">Nenhuma operação aberta</option>';
+    }
+
+    function openPersonModal(id) {
+      personForm.reset(); personId.value = id || ''; personModalTitle.textContent = id ? 'Editar pessoa' : 'Nova pessoa';
+      if (id) { const p=getPerson(id); personName.value=p.name; personPhone.value=p.phone||''; personRelation.value=p.relation||''; personStatus.value=p.status||'Ativo'; personNotes.value=p.notes||''; }
+      personModal.classList.add('show');
+    }
+    function savePerson(e) { e.preventDefault(); const id=personId.value || uid('person'); const data={ id, name:personName.value.trim(), phone:personPhone.value.trim(), relation:personRelation.value.trim(), status:personStatus.value, notes:personNotes.value.trim() }; const i=state.people.findIndex(p=>p.id===id); if(i>=0) state.people[i]=data; else state.people.push(data); closeModal('personModal'); refreshAll(); }
+
+    function openLoanModal(id, presetPersonId) {
+      loanForm.reset(); loanId.value = id || ''; loanModalTitle.textContent = id ? 'Editar operação' : 'Nova operação'; renderPersonOptions(); loanDate.value = todayISO(); loanPeriodDays.value = '10'; loanStatus.value = 'open';
+      if (presetPersonId) loanPerson.value = presetPersonId;
+      if (id) { const l=getLoan(id); loanPerson.value=l.personId; loanDate.value=l.date; loanAmount.value=l.amount; loanRate.value=l.rate; loanPeriodDays.value=l.periodDays; loanCustomDays.value=l.customDays||''; loanFirstDue.value=l.firstDue||''; loanStatus.value=l.status||'open'; loanNotes.value=l.notes||''; }
+      loanModal.classList.add('show');
+    }
+    function saveLoan(e) { e.preventDefault(); if(!loanPerson.value) { alert('Cadastre uma pessoa antes.'); return; } const pd = loanPeriodDays.value; const custom = pd === 'custom' ? Number(loanCustomDays.value || 0) : ''; if(pd === 'custom' && custom <= 0) { alert('Informe os dias do período personalizado.'); return; } const id=loanId.value || uid('loan'); const pDays = pd === 'custom' ? custom : Number(pd); const data={ id, personId:loanPerson.value, date:loanDate.value, amount:Number(loanAmount.value), rate:Number(loanRate.value), periodDays:pd, customDays:custom, firstDue:loanFirstDue.value || addDays(loanDate.value, pDays), status:loanStatus.value, notes:loanNotes.value.trim() }; const i=state.loans.findIndex(l=>l.id===id); if(i>=0) state.loans[i]=data; else state.loans.push(data); closeModal('loanModal'); refreshAll(); }
+
+    function openPaymentModal(loanId) { paymentForm.reset(); renderPaymentOptions(); paymentDate.value = todayISO(); if (loanId) paymentLoan.value = loanId; paymentModal.classList.add('show'); suggestPaymentSplit(true); }
+    function suggestPaymentSplit(apply) { const l=getLoan(paymentLoan.value); if(!l) return; const c=calcLoan(l); const total=Number(paymentTotal.value || 0); const interest=Math.min(total, c.unpaidInterest); const principal=Math.max(0, total - interest); if(apply) { paymentInterest.value=interest.toFixed(2); paymentPrincipal.value=principal.toFixed(2); } }
+    function savePayment(e) { e.preventDefault(); const interest=Number(paymentInterest.value||0), principal=Number(paymentPrincipal.value||0), total=Number(paymentTotal.value||0); if(Math.abs((interest+principal)-total) > 0.01) { alert('A soma de juros + capital precisa bater com o total recebido.'); return; } const l=getLoan(paymentLoan.value); if(!l) return; const c=calcLoan(l); if(principal > c.principal + 0.01) { alert('A amortização de capital não pode ser maior que o capital em aberto.'); return; } state.payments.push({ id:uid('pay'), loanId:paymentLoan.value, date:paymentDate.value, interest, principal, notes:paymentNotes.value.trim() }); const after=calcLoan(l); if(after.principal <= 0.01 && after.unpaidInterest <= 0.01) l.status='closed'; closeModal('paymentModal'); refreshAll(); }
+
+    function openDetail(id) {
+      const l=getLoan(id), p=getPerson(l.personId), c=calcLoan(l), pays=loanPayments(id);
+      detailTitle.textContent = p?.name || 'Operação';
+      detailSub.textContent = `${Number(l.rate)}% a cada ${periodDays(l)} dias · início em ${formatDate(l.date)}`;
+      detailContent.innerHTML = `<div class="grid four" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px"><div class="card"><div class="metric-label">Saldo hoje</div><div class="metric-value">${money(c.balance)}</div></div><div class="card"><div class="metric-label">Capital atual</div><div class="metric-value">${money(c.principal)}</div></div><div class="card"><div class="metric-label">Juros em aberto</div><div class="metric-value yellow">${money(c.unpaidInterest)}</div></div><div class="card"><div class="metric-label">Juros recebidos</div><div class="metric-value green">${money(c.paidInterest)}</div></div></div><div class="toolbar"><h3>Extrato</h3><button class="blue" onclick="closeModal('detailModal');openPaymentModal('${id}')">Registrar pagamento</button></div><div class="card">${renderStatement(l,c,pays)}</div>`;
+      detailModal.classList.add('show');
+    }
+
+    function renderStatement(l,c,pays) {
+      let rows = [{date:l.date, event:'Empréstimo concedido', value:money(l.amount), note:'Capital inicial'}];
+      for(let i=0;i<c.periodsDue;i++) rows.push({date:addDays(l.firstDue, i*periodDays(l)), event:'Juros vencido', value:money(c.interestPerPeriod), note:'Calculado sobre o capital atual, sem capitalizar'});
+      pays.forEach(p => rows.push({date:p.date, event:'Pagamento recebido', value:money(Number(p.interest)+Number(p.principal)), note:`Juros: ${money(p.interest)} · Capital: ${money(p.principal)} ${p.notes ? '· ' + p.notes : ''}`}));
+      rows.sort((a,b)=>a.date.localeCompare(b.date));
+      return `<table><thead><tr><th>Data</th><th>Evento</th><th>Valor</th><th>Observação</th></tr></thead><tbody>${rows.map(r=>`<tr><td data-label="Data">${formatDate(r.date)}</td><td data-label="Evento"><strong>${r.event}</strong></td><td data-label="Valor">${r.value}</td><td data-label="Observação">${r.note}</td></tr>`).join('')}</tbody></table>`;
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+    function exportData() { const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup-carteira-clara.json'; a.click(); URL.revokeObjectURL(a.href); }
+    function importData(event) { const file=event.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ try { const data=JSON.parse(reader.result); if(!data.people || !data.loans || !data.payments) throw new Error(); state=data; refreshAll(); alert('Backup importado com sucesso.'); } catch(e) { alert('Arquivo inválido.'); } }; reader.readAsText(file); }
+    function wipeData() { if(confirm('Tem certeza que deseja apagar todos os dados?')) { state={people:[],loans:[],payments:[]}; refreshAll(); } }
+    function loadSampleData() { state={ people:[{id:'p1',name:'João Silva',phone:'',relation:'Primo',status:'Ativo',notes:'Costuma pagar juros atrasado.'},{id:'p2',name:'Maria Costa',phone:'',relation:'Vizinha',status:'Ativo',notes:''}], loans:[{id:'l1',personId:'p1',date:addDays(todayISO(),-25),amount:1000,rate:10,periodDays:'10',customDays:'',firstDue:addDays(todayISO(),-15),status:'open',notes:'10% de 10 em 10 dias.'},{id:'l2',personId:'p2',date:addDays(todayISO(),-20),amount:1500,rate:5,periodDays:'30',customDays:'',firstDue:addDays(todayISO(),10),status:'open',notes:'5% ao mês.'}], payments:[{id:'pay1',loanId:'l1',date:addDays(todayISO(),-12),interest:100,principal:0,notes:'Pagou primeiro período.'}] }; refreshAll(); }
+
+    loadState(); refreshAll();
+  </script>
 </body>
 </html>
