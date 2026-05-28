@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Carteira Clara - v6: Resultado visivel + outros recebimentos + campos zerados opcionais + modal protegido -->
+<!-- Carteira Clara - v7: Firebase Auth + Firestore + capital total/livre/emprestado -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -248,6 +248,35 @@
     .modal .notice { margin-bottom: 16px; }
 
     body.modal-open { overflow: hidden; touch-action: none; }
+    .app-hidden { display: none !important; }
+    .login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+    }
+    .login-card {
+      width: min(430px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--gold-line);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.45);
+    }
+    .login-card .logo { margin: 0 auto 18px; }
+    .login-card h1 {
+      font-family: 'Outfit', sans-serif;
+      text-align: center;
+      font-size: 18px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .login-card .subtitle { text-align: center; margin-bottom: 22px; }
+    .login-status { color: var(--red); font-size: 12px; margin-top: 12px; min-height: 18px; text-align: center; }
+    .cloud-status { font-size: 11px; color: var(--muted); align-self: center; white-space: nowrap; }
+
     .modal-backdrop.show { pointer-events: auto; }
     .modal { pointer-events: auto; }
 
@@ -288,7 +317,22 @@
   </style>
 </head>
 <body>
-  <div class="app">
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="logo"></div>
+      <h1>Carteira Clara</h1>
+      <p class="subtitle">Acesso protegido com Firebase</p>
+      <form id="loginForm" onsubmit="loginAdmin(event)">
+        <div style="margin-bottom:14px"><label>Usuário</label><input id="loginUser" value="admin" autocomplete="username" required></div>
+        <div style="margin-bottom:14px"><label>Senha</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
+        <button type="submit" style="width:100%;justify-content:center">Entrar</button>
+        <div id="loginStatus" class="login-status"></div>
+      </form>
+      <div class="notice" style="margin-top:18px;margin-bottom:0">Firebase configurado para o projeto <strong>dinheiro-c7f91</strong>. Entre com usuário <strong>admin</strong>.</div>
+    </div>
+  </div>
+
+  <div id="mainApp" class="app app-hidden">
     <header>
       <div class="brand">
         <div class="logo"></div>
@@ -298,8 +342,10 @@
         </div>
       </div>
       <div class="top-actions">
+        <span id="cloudStatus" class="cloud-status">Firebase</span>
         <button class="secondary" onclick="openPersonModal()">+ Pessoa</button>
         <button onclick="openLoanModal()">+ Operação</button>
+        <button class="ghost" onclick="logoutAdmin()">Sair</button>
       </div>
     </header>
 
@@ -320,6 +366,11 @@
           <p class="page-sub">Juros sem capitalização. Saldo atualizado = capital em aberto + juros vencidos não pagos.</p>
         </div>
         <button class="secondary" onclick="refreshAll()">Atualizar valores</button>
+      </div>
+      <div class="grid three">
+        <div class="card"><div class="metric-label">Capital total da operação</div><div id="mCapitalTotal" class="metric-value">R$ 0,00</div><div class="metric-hint"><button class="small secondary" onclick="openCapitalModal()" style="margin-top:8px">Editar capital</button></div></div>
+        <div class="card"><div class="metric-label">Capital emprestado</div><div id="mCapitalEmprestado" class="metric-value yellow">R$ 0,00</div><div class="metric-hint">Capital em aberto nas operações</div></div>
+        <div class="card"><div class="metric-label">Capital livre</div><div id="mCapitalLivre" class="metric-value green">R$ 0,00</div><div class="metric-hint">Capital total - capital emprestado</div></div>
       </div>
       <div class="grid">
         <div class="card"><div class="metric-label">Saldo devedor hoje</div><div id="mSaldo" class="metric-value">R$ 0,00</div><div class="metric-hint">Capital aberto + juros vencidos</div></div>
@@ -399,7 +450,7 @@
     </section>
 
     <section id="settings" class="section">
-      <div class="page-header"><div><h2>Dados e segurança</h2><p class="page-sub">Dados salvos neste navegador. Exporte com frequência se for usar de verdade.</p></div></div>
+      <div class="page-header"><div><h2>Dados e segurança</h2><p class="page-sub">Dados salvos no Firebase/Firestore após login.</p></div></div>
       <div class="settings-grid">
         <div class="card"><h3 style="font-family:'Cormorant Garamond';font-size:18px;text-transform:none;letter-spacing:0;color:var(--text);margin-bottom:6px">Backup</h3><p class="subtitle" style="margin-bottom:16px">Baixe um arquivo com todos os dados cadastrados.</p><button onclick="exportData()">Exportar JSON</button></div>
         <div class="card"><h3 style="font-family:'Cormorant Garamond';font-size:18px;text-transform:none;letter-spacing:0;color:var(--text);margin-bottom:6px">Importar</h3><p class="subtitle" style="margin-bottom:16px">Restaure um backup gerado por este site.</p><input type="file" id="importFile" accept="application/json" onchange="importData(event)"></div>
@@ -417,13 +468,49 @@
 
   <div id="expenseModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="expenseModalTitle">Nova despesa</h2><p class="subtitle">Informe despesas da operação para calcular o resultado mensal.</p></div><button class="ghost small" onclick="closeModal('expenseModal')">✕ Fechar</button></div><div class="modal-body"><div id="expenseLockNotice" class="notice locked-note" style="display:none">Esta despesa está protegida contra alteração acidental. Clique em <strong>Liberar edição</strong> para corrigir os dados.</div><form id="expenseForm" onsubmit="saveExpense(event)"><input type="hidden" id="expenseId"><div class="form-grid"><div><label>Data da despesa</label><input id="expenseDate" type="date" required></div><div><label>Valor</label><input id="expenseAmount" type="number" min="0" step="0.01" required placeholder="0,00"></div><div><label>Categoria</label><input id="expenseCategory" placeholder="Ex: transporte, cartório, taxa..."></div><div><label>Forma</label><input id="expenseMethod" placeholder="Pix, dinheiro, cartão..."></div><div class="full"><label>Descrição</label><textarea id="expenseDescription" placeholder="Ex: custo para cobrar, deslocamento, impressão, taxa bancária..."></textarea></div></div><div class="toolbar"><button id="expenseUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('expense')">Liberar edição</button><div class="row-actions"><button id="expenseDeleteBtn" type="button" class="danger" style="display:none" onclick="deleteExpenseFromModal()">Excluir despesa</button><button id="expenseSaveBtn" type="submit">Salvar despesa</button></div></div></form></div></div></div>
 
+
+  <div id="capitalModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2>Capital da operação</h2><p class="subtitle">Informe o dinheiro total disponível para emprestar.</p></div><button class="ghost small" onclick="closeModal('capitalModal')">✕ Fechar</button></div><div class="modal-body"><div class="notice">O capital livre é calculado automaticamente: capital total menos capital atualmente emprestado. Capital amortizado volta a ficar livre.</div><form id="capitalForm" onsubmit="saveCapitalConfig(event)"><div class="form-grid"><div class="full"><label>Capital total disponível</label><input id="capitalTotalInput" type="number" min="0" step="0.01" required placeholder="0,00"></div></div><div class="toolbar"><span></span><button type="submit">Salvar capital</button></div></form></div></div></div>
+
   <div id="detailModal" class="modal-backdrop"><div class="modal" style="width:min(920px,100%)"><div class="modal-head"><div><h2 id="detailTitle">Operação</h2><p id="detailSub" class="subtitle"></p></div><button class="ghost small" onclick="closeModal('detailModal')">✕ Fechar</button></div><div id="detailContent"></div></div></div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script>
+    // Cole aqui o firebaseConfig do seu projeto Firebase.
+    // A senha NÃO fica no HTML. O login usa Firebase Authentication.
+    const firebaseConfig = {
+      apiKey: "AIzaSyBensnmpEXrAqNRrb9u1S1eaz9hf6WdQH4",
+      authDomain: "dinheiro-c7f91.firebaseapp.com",
+      projectId: "dinheiro-c7f91",
+      storageBucket: "dinheiro-c7f91.firebasestorage.app",
+      messagingSenderId: "965183949603",
+      appId: "1:965183949603:web:da80a25b587d4416491a96",
+      measurementId: "G-12TTPK76MK"
+    };
+    const ADMIN_EMAIL = 'admin@carteiraclara.local';
+    const ADMIN_UID = 'MwBQo1rcYnacu60jWbVUEyoI54q1';
+    let firebaseApp = null, auth = null, db = null, currentUser = null, cloudSaveTimer = null, cloudLoaded = false;
+
     const STORAGE_KEY = 'carteira_clara_v2';
     const OLD_STORAGE_KEY = 'carteira_clara_v1';
-    let state = { people: [], loans: [], payments: [], expenses: [], history: [] };
+    let state = defaultState();
     let historyFilter = 'all';
+
+    function defaultState() { return { people: [], loans: [], payments: [], expenses: [], history: [], config: { totalCapital: 0 } }; }
+    function normalizeState(data) {
+      var base = defaultState();
+      data = data || {};
+      base.people = data.people || [];
+      base.loans = data.loans || [];
+      base.payments = data.payments || [];
+      base.payments.forEach(function(p){ if (p.other === undefined) p.other = 0; });
+      base.expenses = data.expenses || [];
+      base.history = data.history || [];
+      base.config = data.config || { totalCapital: 0 };
+      if (base.config.totalCapital === undefined) base.config.totalCapital = 0;
+      return base;
+    }
 
     function uid(prefix) { return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
     function todayISO() { return new Date().toISOString().slice(0,10); }
@@ -460,18 +547,29 @@
     function clampMoney(v) { return Math.max(0, Math.round(Number(v || 0) * 100) / 100); }
     function escapeHtml(s) { return String(s || '').replace(/[&<>'"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]; }); }
 
-    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-    function loadState() {
-      try {
-        var saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(OLD_STORAGE_KEY);
-        state = saved ? JSON.parse(saved) : state;
-        state.people = state.people || [];
-        state.loans = state.loans || [];
-        state.payments = state.payments || [];
-        state.payments.forEach(function(p){ if (p.other === undefined) p.other = 0; });
-        state.expenses = state.expenses || [];
-        state.history = state.history || [];
-      } catch(e) {}
+    function carteiraDocRef() {
+      return db.collection('users').doc(currentUser.uid).collection('carteira').doc('main');
+    }
+    function setCloudStatus(text) { if (document.getElementById('cloudStatus')) cloudStatus.textContent = text; }
+    function saveState() {
+      if (!cloudLoaded || !currentUser || !db) return;
+      clearTimeout(cloudSaveTimer);
+      setCloudStatus('Salvando...');
+      cloudSaveTimer = setTimeout(function(){
+        carteiraDocRef().set({ state: state, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+          .then(function(){ setCloudStatus('Salvo no Firebase'); })
+          .catch(function(err){ console.error(err); setCloudStatus('Erro ao salvar'); alert('Erro ao salvar no Firebase: ' + err.message); });
+      }, 350);
+    }
+    async function loadCloudState() {
+      cloudLoaded = false;
+      setCloudStatus('Carregando...');
+      var snap = await carteiraDocRef().get();
+      state = snap.exists ? normalizeState((snap.data() || {}).state) : defaultState();
+      cloudLoaded = true;
+      refreshAll(false);
+      if (!snap.exists) saveState();
+      setCloudStatus('Salvo no Firebase');
     }
 
     function addHistory(type, title, amount, details) {
@@ -555,7 +653,7 @@
 
     function renderDashboard() {
       var p = portfolio();
-      mSaldo.textContent = money(p.balance); mCapital.textContent = money(p.principal); mJurosVencidos.textContent = money(p.unpaidInterest); mLucro.textContent = money(p.profit);
+      mSaldo.textContent = money(p.balance); mCapital.textContent = money(p.principal); mJurosVencidos.textContent = money(p.unpaidInterest); mLucro.textContent = money(p.profit); if (document.getElementById('mCapitalTotal')) { var totalCap = Number((state.config || {}).totalCapital || 0); mCapitalTotal.textContent = money(totalCap); mCapitalEmprestado.textContent = money(p.principal); mCapitalLivre.textContent = money(totalCap - p.principal); mCapitalLivre.className = 'metric-value ' + (totalCap - p.principal < 0 ? 'red' : 'green'); }
       var alerts = state.loans.filter(l => l.status !== 'closed').map(l => ({loan:l, c:calcLoan(l), person:getPerson(l.personId)})).filter(x => x.c.unpaidInterest > 0 || daysBetween(todayISO(), x.c.nextDue) <= 2).sort((a,b) => b.c.unpaidInterest - a.c.unpaidInterest).slice(0,6);
       alertList.innerHTML = alerts.length ? alerts.map(x => '<div class="mini-item"><div><div class="mini-title">' + escapeHtml(x.person ? x.person.name : 'Sem nome') + '</div><div class="mini-sub">' + (x.c.unpaidInterest > 0 ? 'Juros em aberto: ' + money(x.c.unpaidInterest) : 'Vencimento próximo') + '</div></div><div class="right"><span class="status ' + (x.c.unpaidInterest > 0 ? 'bad' : 'warn') + '">' + (x.c.unpaidInterest > 0 ? 'Atenção' : 'Vence logo') + '</span></div></div>').join('') : '<div class="empty">Nenhum alerta no momento.</div>';
       var due = state.loans.filter(l => l.status !== 'closed').map(l => { var c=calcLoan(l); return {loan:l, c:c, person:getPerson(l.personId), days:daysBetween(todayISO(), c.nextDue)}; }).filter(x => x.days >= 0 && x.days <= 10).sort((a,b) => a.days - b.days).slice(0,6);
@@ -695,7 +793,7 @@
       historyTable.innerHTML = '<table><thead><tr><th>Data/hora</th><th>Tipo</th><th>Registro</th><th>Valor</th><th>Detalhes</th></tr></thead><tbody>' + rows.map(function(h){ return '<tr><td data-label="Data/hora">' + escapeHtml(h.when || '-') + '</td><td data-label="Tipo">' + historyBadge(h.type) + '</td><td data-label="Registro"><strong>' + escapeHtml(h.title || '-') + '</strong></td><td data-label="Valor">' + (Number(h.amount || 0) ? money(h.amount) : '-') + '</td><td data-label="Detalhes">' + escapeHtml(h.details || '-') + '</td></tr>'; }).join('') + '</tbody></table>';
     }
     function historyBadge(type) {
-      var map = { loan_created:['neutral','Empréstimo'], interest_paid:['ok','Juros pago'], principal_paid:['ok','Capital pago'], person_created:['neutral','Pessoa'], person_edited:['warn','Edição'], loan_edited:['warn','Edição'], payment_edited:['warn','Edição'], payment_deleted:['bad','Exclusão'], data_imported:['neutral','Importação'], sample_loaded:['neutral','Exemplo'], data_wiped:['bad','Limpeza'] };
+      var map = { loan_created:['neutral','Empréstimo'], interest_paid:['ok','Juros pago'], principal_paid:['ok','Capital pago'], person_created:['neutral','Pessoa'], person_edited:['warn','Edição'], loan_edited:['warn','Edição'], payment_edited:['warn','Edição'], payment_deleted:['bad','Exclusão'], data_imported:['neutral','Importação'], sample_loaded:['neutral','Exemplo'], data_wiped:['bad','Limpeza'], capital_edited:['warn','Capital'] };
       var m = map[type] || ['neutral', type || 'Registro']; return '<span class="status ' + m[0] + '">' + m[1] + '</span>';
     }
     function setHistoryFilter(filter) { historyFilter = filter; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.querySelector('[data-history-filter="' + filter + '"]').classList.add('active'); renderHistory(); }
@@ -718,14 +816,62 @@
     function openDetail(id) { var l=getLoan(id), p=getPerson(l.personId), c=calcLoan(l), pays=loanPayments(id); detailTitle.textContent = p ? p.name : 'Operação'; detailSub.textContent = Number(l.rate) + '% / ' + periodLabel(l) + ' · início em ' + formatDate(l.date); detailContent.innerHTML = '<div class="grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:0"><div class="card"><div class="metric-label">Saldo hoje</div><div class="metric-value">' + money(c.balance) + '</div></div><div class="card"><div class="metric-label">Saldo inicial</div><div class="metric-value">' + money(l.amount) + '</div></div><div class="card"><div class="metric-label">Juros em aberto</div><div class="metric-value yellow">' + money(c.unpaidInterest) + '</div></div><div class="card"><div class="metric-label">Juros recebidos</div><div class="metric-value green">' + money(c.paidInterest) + '</div></div><div class="card"><div class="metric-label">Outros recebidos</div><div class="metric-value green">' + money(c.paidOther) + '</div></div></div><div class="toolbar" style="margin-top:16px"><h3>Extrato</h3><button onclick="closeModal(\'detailModal\');openPaymentModal(null,\'' + id + '\')">Registrar pagamento</button></div><div class="card" style="padding:0;overflow:hidden;margin-top:0">' + renderStatement(l,c,pays) + '</div>'; showModal('detailModal'); }
     function renderStatement(l,c,pays) { var rows = [{date:l.date, event:'Empréstimo concedido', value:money(l.amount), note:'Capital inicial', action:''}]; for(var i=0;i<c.periodsDue;i++) rows.push({date:dueDateAt(l, i), event:'Juros vencido', value:money(c.interestPerPeriod), note:'Calculado sobre o capital atual, sem capitalizar', action:''}); pays.forEach(function(p){ rows.push({date:p.date, event:'Pagamento recebido', value:money(Number(p.interest||0)+Number(p.principal||0)+Number(p.other||0)), note:'Juros: ' + money(p.interest) + ' · Capital: ' + money(p.principal) + ' · Outros: ' + money(p.other || 0) + (p.notes ? ' · ' + escapeHtml(p.notes) : ''), action:'<button class="small ghost" onclick="closeModal(\'detailModal\');openPaymentModal(\'' + p.id + '\')">Ver / Editar</button>'}); }); rows.sort((a,b) => a.date.localeCompare(b.date)); return '<table><thead><tr><th>Data</th><th>Evento</th><th>Valor</th><th>Observação</th><th>Ação</th></tr></thead><tbody>' + rows.map(r => '<tr><td data-label="Data">' + formatDate(r.date) + '</td><td data-label="Evento"><strong>' + r.event + '</strong></td><td data-label="Valor">' + r.value + '</td><td data-label="Observação">' + r.note + '</td><td data-label="Ação">' + (r.action || '-') + '</td></tr>').join('') + '</tbody></table>'; }
 
+    function openCapitalModal() { capitalTotalInput.value = Number((state.config || {}).totalCapital || 0) || ''; showModal('capitalModal'); }
+    function saveCapitalConfig(e) { e.preventDefault(); var old = Number((state.config || {}).totalCapital || 0); state.config = state.config || {}; state.config.totalCapital = Number(capitalTotalInput.value || 0); addHistory('capital_edited', 'Capital total da operação atualizado', state.config.totalCapital, 'Antes: ' + money(old) + ' · Agora: ' + money(state.config.totalCapital)); closeModal('capitalModal'); refreshAll(); }
+
     function showModal(id) { document.getElementById(id).classList.add('show'); document.body.classList.add('modal-open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('show'); if (!document.querySelector('.modal-backdrop.show')) document.body.classList.remove('modal-open'); }
     function exportData() { addHistory('data_imported', 'Backup exportado', 0, 'Arquivo JSON gerado.'); saveState(); var blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup-carteira-clara.json'; a.click(); URL.revokeObjectURL(a.href); }
     function importData(event) { var file=event.target.files[0]; if(!file) return; var reader=new FileReader(); reader.onload=function(){ try { var data=JSON.parse(reader.result); if(!data.people || !data.loans || !data.payments) throw new Error(); state=data; state.expenses = state.expenses || []; state.history = state.history || []; addHistory('data_imported', 'Backup importado', 0, 'Arquivo importado com sucesso.'); refreshAll(); alert('Backup importado com sucesso.'); } catch(e) { alert('Arquivo inválido.'); } }; reader.readAsText(file); }
-    function wipeData() { if(confirm('Tem certeza que deseja apagar todos os dados?')) { state={people:[],loans:[],payments:[],expenses:[],history:[]}; addHistory('data_wiped', 'Dados apagados', 0, 'Base local zerada.'); refreshAll(); } }
-    function loadSampleData() { state={ people:[{id:'p1',name:'João Silva',phone:'',relation:'Primo',status:'Ativo',notes:'Costuma pagar juros atrasado.'},{id:'p2',name:'Maria Costa',phone:'',relation:'Vizinha',status:'Ativo',notes:''}], loans:[{id:'l1',personId:'p1',date:addDays(todayISO(),-25),amount:1000,rate:10,periodDays:'10',customDays:'',firstDue:addDays(todayISO(),-15),status:'open',notes:'10% de 10 em 10 dias.'},{id:'l2',personId:'p2',date:addDays(todayISO(),-20),amount:1500,rate:5,periodDays:'monthly',customDays:'',firstDue:addDays(todayISO(),10),status:'open',notes:'5% mensal.'}], payments:[{id:'pay1',loanId:'l1',date:addDays(todayISO(),-12),interest:100,principal:0,other:15,notes:'Pagou primeiro período + mora.'}], expenses:[{id:'exp1',date:todayISO(),amount:18.50,category:'Transporte',method:'Pix',description:'Despesa de exemplo'}], history:[] }; addHistory('sample_loaded', 'Dados de exemplo carregados', 0, 'Base de teste criada.'); addHistory('loan_created', 'Valor emprestado para João Silva', 1000, '10% a cada 10 dias'); addHistory('loan_created', 'Valor emprestado para Maria Costa', 1500, '5% mensal'); addHistory('interest_paid', 'Juros pago por João Silva', 100, 'Pagamento de exemplo'); addHistory('other_paid', 'Outros recebimentos de João Silva', 15, 'Mora de exemplo'); addHistory('expense_created', 'Despesa registrada', 18.50, 'Transporte · exemplo'); refreshAll(); }
+    function wipeData() { if(confirm('Tem certeza que deseja apagar todos os dados?')) { state=defaultState(); addHistory('data_wiped', 'Dados apagados', 0, 'Base local zerada.'); refreshAll(); } }
+    function loadSampleData() { state={ people:[{id:'p1',name:'João Silva',phone:'',relation:'Primo',status:'Ativo',notes:'Costuma pagar juros atrasado.'},{id:'p2',name:'Maria Costa',phone:'',relation:'Vizinha',status:'Ativo',notes:''}], loans:[{id:'l1',personId:'p1',date:addDays(todayISO(),-25),amount:1000,rate:10,periodDays:'10',customDays:'',firstDue:addDays(todayISO(),-15),status:'open',notes:'10% de 10 em 10 dias.'},{id:'l2',personId:'p2',date:addDays(todayISO(),-20),amount:1500,rate:5,periodDays:'monthly',customDays:'',firstDue:addDays(todayISO(),10),status:'open',notes:'5% mensal.'}], payments:[{id:'pay1',loanId:'l1',date:addDays(todayISO(),-12),interest:100,principal:0,other:15,notes:'Pagou primeiro período + mora.'}], expenses:[{id:'exp1',date:todayISO(),amount:18.50,category:'Transporte',method:'Pix',description:'Despesa de exemplo'}], history:[], config:{ totalCapital: 5000 } }; addHistory('sample_loaded', 'Dados de exemplo carregados', 0, 'Base de teste criada.'); addHistory('loan_created', 'Valor emprestado para João Silva', 1000, '10% a cada 10 dias'); addHistory('loan_created', 'Valor emprestado para Maria Costa', 1500, '5% mensal'); addHistory('interest_paid', 'Juros pago por João Silva', 100, 'Pagamento de exemplo'); addHistory('other_paid', 'Outros recebimentos de João Silva', 15, 'Mora de exemplo'); addHistory('expense_created', 'Despesa registrada', 18.50, 'Transporte · exemplo'); refreshAll(); }
 
-    loadState(); refreshAll(false);
+    function isFirebaseConfigured() {
+      return firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== 'COLE_AQUI' && firebaseConfig.projectId && firebaseConfig.projectId !== 'COLE_AQUI';
+    }
+    function initFirebase() {
+      if (!isFirebaseConfigured()) {
+        loginStatus.textContent = 'Antes de entrar, cole o firebaseConfig do seu projeto no código.';
+        return;
+      }
+      try {
+        firebaseApp = firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        auth.onAuthStateChanged(async function(user){
+          if (user) {
+            if (user.uid !== ADMIN_UID) {
+              await auth.signOut();
+              loginStatus.textContent = 'Usuário não autorizado para esta carteira.';
+              return;
+            }
+            currentUser = user;
+            loginScreen.classList.add('app-hidden');
+            mainApp.classList.remove('app-hidden');
+            await loadCloudState();
+          } else {
+            currentUser = null;
+            cloudLoaded = false;
+            mainApp.classList.add('app-hidden');
+            loginScreen.classList.remove('app-hidden');
+          }
+        });
+      } catch (err) {
+        loginStatus.textContent = 'Erro ao iniciar Firebase: ' + err.message;
+      }
+    }
+    function loginAdmin(e) {
+      e.preventDefault();
+      if (!auth) { loginStatus.textContent = 'Firebase ainda não foi configurado.'; return; }
+      var user = String(loginUser.value || '').trim().toLowerCase();
+      var pass = String(loginPassword.value || '');
+      if (user !== 'admin') { loginStatus.textContent = 'Usuário inválido. Use admin.'; return; }
+      loginStatus.textContent = 'Entrando...';
+      auth.signInWithEmailAndPassword(ADMIN_EMAIL, pass).catch(function(err){ loginStatus.textContent = 'Não foi possível entrar: ' + err.message; });
+    }
+    function logoutAdmin() { if (auth) auth.signOut(); }
+
+    initFirebase();
   </script>
 </body>
 </html>
