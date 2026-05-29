@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Carteira Clara - v7: Firebase Auth + Firestore + capital total/livre/emprestado -->
+<!-- Carteira Clara - v10: Firebase revisado + salvamento corrigido + resultado mensal estável -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -561,6 +561,20 @@
           .catch(function(err){ console.error(err); setCloudStatus('Erro ao salvar'); alert('Erro ao salvar no Firebase: ' + err.message); });
       }, 350);
     }
+    async function saveStateNow() {
+      if (!cloudLoaded || !currentUser || !db) return;
+      clearTimeout(cloudSaveTimer);
+      setCloudStatus('Salvando...');
+      try {
+        await carteiraDocRef().set({ state: state, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        setCloudStatus('Salvo no Firebase');
+      } catch (err) {
+        console.error(err);
+        setCloudStatus('Erro ao salvar');
+        alert('Erro ao salvar no Firebase: ' + err.message);
+        throw err;
+      }
+    }
     async function loadCloudState() {
       cloudLoaded = false;
       setCloudStatus('Carregando...');
@@ -695,11 +709,11 @@
     function renderPayments() {
       var rows = state.payments.slice().sort((a,b) => b.date.localeCompare(a.date));
       if (!rows.length) { paymentsTable.innerHTML = '<div class="empty">Nenhum pagamento registrado.</div>'; return; }
-      paymentsTable.innerHTML = '<table><thead><tr><th>Data</th><th>Pessoa</th><th>Total</th><th>Juros</th><th>Capital</th><th>Observação</th><th>Ações</th></tr></thead><tbody>' + rows.map(function(p){ var l=getLoan(p.loanId); var person=l?getPerson(l.personId):null; return '<tr><td data-label="Data">' + formatDate(p.date) + '</td><td data-label="Pessoa"><strong>' + escapeHtml(person ? person.name : '-') + '</strong></td><td data-label="Total">' + money(Number(p.interest||0)+Number(p.principal||0)+Number(p.other||0)) + '</td><td data-label="Juros" class="green">' + money(p.interest) + '</td><td data-label="Capital">' + money(p.principal) + '</td><td data-label="Observação">' + escapeHtml(p.notes || '-') + '</td><td data-label="Ações"><button class="small ghost" onclick="openPaymentModal(\'' + p.id + '\')">Ver / Editar</button></td></tr>'; }).join('') + '</tbody></table>';
+      paymentsTable.innerHTML = '<table><thead><tr><th>Data</th><th>Pessoa</th><th>Total</th><th>Juros</th><th>Capital</th><th>Outros</th><th>Observação</th><th>Ações</th></tr></thead><tbody>' + rows.map(function(p){ var l=getLoan(p.loanId); var person=l?getPerson(l.personId):null; return '<tr><td data-label="Data">' + formatDate(p.date) + '</td><td data-label="Pessoa"><strong>' + escapeHtml(person ? person.name : '-') + '</strong></td><td data-label="Total">' + money(Number(p.interest||0)+Number(p.principal||0)+Number(p.other||0)) + '</td><td data-label="Juros" class="green">' + money(p.interest) + '</td><td data-label="Capital">' + money(p.principal) + '</td><td data-label="Outros" class="green">' + money(p.other || 0) + '</td><td data-label="Observação">' + escapeHtml(p.notes || '-') + '</td><td data-label="Ações"><button class="small ghost" onclick="openPaymentModal(\'' + p.id + '\')">Ver / Editar</button></td></tr>'; }).join('') + '</tbody></table>';
     }
 
     function monthlyResultData() {
-      var ym = monthlySelect.value || todayISO().slice(0,7);
+      var ym = resultMonth.value || todayISO().slice(0,7);
       var revenuePayments = state.payments.filter(function(p){ return inMonth(p.date, ym) && (Number(p.interest || 0) > 0 || Number(p.other || 0) > 0); });
       var interest = revenuePayments.reduce(function(s,p){ return s + Number(p.interest || 0); }, 0);
       var other = revenuePayments.reduce(function(s,p){ return s + Number(p.other || 0); }, 0);
@@ -786,6 +800,7 @@
       if (historyFilter !== 'all') {
         if (historyFilter === 'edited') rows = rows.filter(h => h.type.indexOf('edited') >= 0);
         else if (historyFilter === 'deleted') rows = rows.filter(h => h.type.indexOf('deleted') >= 0);
+        else if (historyFilter === 'expense') rows = rows.filter(h => h.type.indexOf('expense_') === 0);
         else rows = rows.filter(h => h.type === historyFilter);
       }
       if (q) rows = rows.filter(h => ((h.when || '') + ' ' + (h.title || '') + ' ' + (h.details || '')).toLowerCase().indexOf(q) >= 0);
@@ -793,7 +808,7 @@
       historyTable.innerHTML = '<table><thead><tr><th>Data/hora</th><th>Tipo</th><th>Registro</th><th>Valor</th><th>Detalhes</th></tr></thead><tbody>' + rows.map(function(h){ return '<tr><td data-label="Data/hora">' + escapeHtml(h.when || '-') + '</td><td data-label="Tipo">' + historyBadge(h.type) + '</td><td data-label="Registro"><strong>' + escapeHtml(h.title || '-') + '</strong></td><td data-label="Valor">' + (Number(h.amount || 0) ? money(h.amount) : '-') + '</td><td data-label="Detalhes">' + escapeHtml(h.details || '-') + '</td></tr>'; }).join('') + '</tbody></table>';
     }
     function historyBadge(type) {
-      var map = { loan_created:['neutral','Empréstimo'], interest_paid:['ok','Juros pago'], principal_paid:['ok','Capital pago'], person_created:['neutral','Pessoa'], person_edited:['warn','Edição'], loan_edited:['warn','Edição'], payment_edited:['warn','Edição'], payment_deleted:['bad','Exclusão'], data_imported:['neutral','Importação'], sample_loaded:['neutral','Exemplo'], data_wiped:['bad','Limpeza'], capital_edited:['warn','Capital'] };
+      var map = { loan_created:['neutral','Empréstimo'], interest_paid:['ok','Juros pago'], principal_paid:['ok','Capital pago'], other_paid:['ok','Outros'], person_created:['neutral','Pessoa'], person_edited:['warn','Edição'], loan_edited:['warn','Edição'], payment_edited:['warn','Edição'], payment_deleted:['bad','Exclusão'], expense_created:['bad','Despesa'], expense_edited:['warn','Despesa editada'], expense_deleted:['bad','Despesa excluída'], data_imported:['neutral','Importação'], data_exported:['neutral','Exportação'], sample_loaded:['neutral','Exemplo'], data_wiped:['bad','Limpeza'], capital_edited:['warn','Capital'] };
       var m = map[type] || ['neutral', type || 'Registro']; return '<span class="status ' + m[0] + '">' + m[1] + '</span>';
     }
     function setHistoryFilter(filter) { historyFilter = filter; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.querySelector('[data-history-filter="' + filter + '"]').classList.add('active'); renderHistory(); }
@@ -811,17 +826,34 @@
     function suggestPaymentSplit(apply) { var l=getLoan(paymentLoan.value); if(!l) return; var c=calcLoan(l); var totalText = String(paymentTotal.value || '').trim(); if (!totalText) { if (apply) { paymentInterest.value=''; paymentPrincipal.value=''; } return; } var total=Number(totalText || 0); var interest=Math.min(total, c.unpaidInterest); var principal=Math.max(0, total - interest); if(apply) { paymentInterest.value=interest ? interest.toFixed(2) : ''; paymentPrincipal.value=principal ? principal.toFixed(2) : ''; } }
     function savePayment(e) { e.preventDefault(); var id = paymentId.value || uid('pay'); var interest=Number(paymentInterest.value||0), principal=Number(paymentPrincipal.value||0), other=Number(paymentOther.value||0), total=Number(paymentTotal.value||0); if(Math.abs((interest+principal+other)-total) > 0.01) { alert('A soma de capital + juros + outros precisa bater com o total recebido.'); return; } var l=getLoan(paymentLoan.value); if(!l) return; var existingIndex = state.payments.findIndex(p => p.id === id); var oldPayment = existingIndex >= 0 ? Object.assign({}, state.payments[existingIndex]) : null; var c=calcLoan(l); var currentPrincipalAllowance = c.principal + (oldPayment && oldPayment.loanId === l.id ? Number(oldPayment.principal || 0) : 0); if(principal > currentPrincipalAllowance + 0.01) { alert('A amortização de capital não pode ser maior que o capital em aberto.'); return; } var data = { id:id, loanId:paymentLoan.value, date:paymentDate.value, interest:interest, principal:principal, other:other, notes:paymentNotes.value.trim() }; if(existingIndex >= 0) { state.payments[existingIndex] = data; addHistory('payment_edited', 'Pagamento editado: ' + personNameByLoan(data.loanId), total, diffText(oldPayment, data, {loanId:'Operação',date:'Data',interest:'Juros',principal:'Capital',other:'Outros',notes:'Observação'})); } else { state.payments.push(data); if (interest > 0) addHistory('interest_paid', 'Juros pago por ' + personNameByLoan(data.loanId), interest, 'Pagamento em ' + formatDate(data.date)); if (principal > 0) addHistory('principal_paid', 'Capital pago por ' + personNameByLoan(data.loanId), principal, 'Amortização em ' + formatDate(data.date)); if (other > 0) addHistory('other_paid', 'Outros recebimentos de ' + personNameByLoan(data.loanId), other, 'Multa, mora ou outro combinado em ' + formatDate(data.date)); if (interest <= 0 && principal <= 0 && other <= 0) addHistory('payment_edited', 'Pagamento registrado sem valor', 0, 'Registro em ' + formatDate(data.date)); }
       var after=calcLoan(l); if(after.principal <= 0.01 && after.unpaidInterest <= 0.01) l.status='closed'; closeModal('paymentModal'); refreshAll(); }
-    function deletePaymentFromModal() { var id = paymentId.value; var p = getPayment(id); if (!p) return; if (!confirm('Tem certeza que deseja excluir este pagamento?')) return; state.payments = state.payments.filter(x => x.id !== id); addHistory('payment_deleted', 'Pagamento excluído: ' + personNameByLoan(p.loanId), Number(p.interest || 0) + Number(p.principal || 0), 'Juros: ' + money(p.interest) + ' · Capital: ' + money(p.principal) + ' · Outros: ' + money(p.other || 0) + ' · Outros: ' + money(p.other || 0) + ' · Data: ' + formatDate(p.date)); closeModal('paymentModal'); refreshAll(); }
+    function deletePaymentFromModal() { var id = paymentId.value; var p = getPayment(id); if (!p) return; if (!confirm('Tem certeza que deseja excluir este pagamento?')) return; state.payments = state.payments.filter(x => x.id !== id); addHistory('payment_deleted', 'Pagamento excluído: ' + personNameByLoan(p.loanId), Number(p.interest || 0) + Number(p.principal || 0) + Number(p.other || 0), 'Juros: ' + money(p.interest) + ' · Capital: ' + money(p.principal) + ' · Outros: ' + money(p.other || 0) + ' · Data: ' + formatDate(p.date)); closeModal('paymentModal'); refreshAll(); }
 
     function openDetail(id) { var l=getLoan(id), p=getPerson(l.personId), c=calcLoan(l), pays=loanPayments(id); detailTitle.textContent = p ? p.name : 'Operação'; detailSub.textContent = Number(l.rate) + '% / ' + periodLabel(l) + ' · início em ' + formatDate(l.date); detailContent.innerHTML = '<div class="grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:0"><div class="card"><div class="metric-label">Saldo hoje</div><div class="metric-value">' + money(c.balance) + '</div></div><div class="card"><div class="metric-label">Saldo inicial</div><div class="metric-value">' + money(l.amount) + '</div></div><div class="card"><div class="metric-label">Juros em aberto</div><div class="metric-value yellow">' + money(c.unpaidInterest) + '</div></div><div class="card"><div class="metric-label">Juros recebidos</div><div class="metric-value green">' + money(c.paidInterest) + '</div></div><div class="card"><div class="metric-label">Outros recebidos</div><div class="metric-value green">' + money(c.paidOther) + '</div></div></div><div class="toolbar" style="margin-top:16px"><h3>Extrato</h3><button onclick="closeModal(\'detailModal\');openPaymentModal(null,\'' + id + '\')">Registrar pagamento</button></div><div class="card" style="padding:0;overflow:hidden;margin-top:0">' + renderStatement(l,c,pays) + '</div>'; showModal('detailModal'); }
     function renderStatement(l,c,pays) { var rows = [{date:l.date, event:'Empréstimo concedido', value:money(l.amount), note:'Capital inicial', action:''}]; for(var i=0;i<c.periodsDue;i++) rows.push({date:dueDateAt(l, i), event:'Juros vencido', value:money(c.interestPerPeriod), note:'Calculado sobre o capital atual, sem capitalizar', action:''}); pays.forEach(function(p){ rows.push({date:p.date, event:'Pagamento recebido', value:money(Number(p.interest||0)+Number(p.principal||0)+Number(p.other||0)), note:'Juros: ' + money(p.interest) + ' · Capital: ' + money(p.principal) + ' · Outros: ' + money(p.other || 0) + (p.notes ? ' · ' + escapeHtml(p.notes) : ''), action:'<button class="small ghost" onclick="closeModal(\'detailModal\');openPaymentModal(\'' + p.id + '\')">Ver / Editar</button>'}); }); rows.sort((a,b) => a.date.localeCompare(b.date)); return '<table><thead><tr><th>Data</th><th>Evento</th><th>Valor</th><th>Observação</th><th>Ação</th></tr></thead><tbody>' + rows.map(r => '<tr><td data-label="Data">' + formatDate(r.date) + '</td><td data-label="Evento"><strong>' + r.event + '</strong></td><td data-label="Valor">' + r.value + '</td><td data-label="Observação">' + r.note + '</td><td data-label="Ação">' + (r.action || '-') + '</td></tr>').join('') + '</tbody></table>'; }
 
     function openCapitalModal() { capitalTotalInput.value = Number((state.config || {}).totalCapital || 0) || ''; showModal('capitalModal'); }
-    function saveCapitalConfig(e) { e.preventDefault(); var old = Number((state.config || {}).totalCapital || 0); state.config = state.config || {}; state.config.totalCapital = Number(capitalTotalInput.value || 0); addHistory('capital_edited', 'Capital total da operação atualizado', state.config.totalCapital, 'Antes: ' + money(old) + ' · Agora: ' + money(state.config.totalCapital)); closeModal('capitalModal'); refreshAll(); }
+    async function saveCapitalConfig(e) {
+      e.preventDefault();
+      var old = Number((state.config || {}).totalCapital || 0);
+      state.config = state.config || {};
+      state.config.totalCapital = Number(capitalTotalInput.value || 0);
+      addHistory('capital_edited', 'Capital total da operação atualizado', state.config.totalCapital, 'Antes: ' + money(old) + ' · Agora: ' + money(state.config.totalCapital));
+      try {
+        renderDashboard();
+        renderHistory();
+        await saveStateNow();
+        closeModal('capitalModal');
+        refreshAll(false);
+      } catch (err) {
+        state.config.totalCapital = old;
+        renderDashboard();
+        renderHistory();
+      }
+    }
 
     function showModal(id) { document.getElementById(id).classList.add('show'); document.body.classList.add('modal-open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('show'); if (!document.querySelector('.modal-backdrop.show')) document.body.classList.remove('modal-open'); }
-    function exportData() { addHistory('data_imported', 'Backup exportado', 0, 'Arquivo JSON gerado.'); saveState(); var blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup-carteira-clara.json'; a.click(); URL.revokeObjectURL(a.href); }
+    function exportData() { addHistory('data_exported', 'Backup exportado', 0, 'Arquivo JSON gerado.'); saveState(); var blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup-carteira-clara.json'; a.click(); URL.revokeObjectURL(a.href); }
     function importData(event) { var file=event.target.files[0]; if(!file) return; var reader=new FileReader(); reader.onload=function(){ try { var data=JSON.parse(reader.result); if(!data.people || !data.loans || !data.payments) throw new Error(); state=data; state.expenses = state.expenses || []; state.history = state.history || []; addHistory('data_imported', 'Backup importado', 0, 'Arquivo importado com sucesso.'); refreshAll(); alert('Backup importado com sucesso.'); } catch(e) { alert('Arquivo inválido.'); } }; reader.readAsText(file); }
     function wipeData() { if(confirm('Tem certeza que deseja apagar todos os dados?')) { state=defaultState(); addHistory('data_wiped', 'Dados apagados', 0, 'Base local zerada.'); refreshAll(); } }
     function loadSampleData() { state={ people:[{id:'p1',name:'João Silva',phone:'',relation:'Primo',status:'Ativo',notes:'Costuma pagar juros atrasado.'},{id:'p2',name:'Maria Costa',phone:'',relation:'Vizinha',status:'Ativo',notes:''}], loans:[{id:'l1',personId:'p1',date:addDays(todayISO(),-25),amount:1000,rate:10,periodDays:'10',customDays:'',firstDue:addDays(todayISO(),-15),status:'open',notes:'10% de 10 em 10 dias.'},{id:'l2',personId:'p2',date:addDays(todayISO(),-20),amount:1500,rate:5,periodDays:'monthly',customDays:'',firstDue:addDays(todayISO(),10),status:'open',notes:'5% mensal.'}], payments:[{id:'pay1',loanId:'l1',date:addDays(todayISO(),-12),interest:100,principal:0,other:15,notes:'Pagou primeiro período + mora.'}], expenses:[{id:'exp1',date:todayISO(),amount:18.50,category:'Transporte',method:'Pix',description:'Despesa de exemplo'}], history:[], config:{ totalCapital: 5000 } }; addHistory('sample_loaded', 'Dados de exemplo carregados', 0, 'Base de teste criada.'); addHistory('loan_created', 'Valor emprestado para João Silva', 1000, '10% a cada 10 dias'); addHistory('loan_created', 'Valor emprestado para Maria Costa', 1500, '5% mensal'); addHistory('interest_paid', 'Juros pago por João Silva', 100, 'Pagamento de exemplo'); addHistory('other_paid', 'Outros recebimentos de João Silva', 15, 'Mora de exemplo'); addHistory('expense_created', 'Despesa registrada', 18.50, 'Transporte · exemplo'); refreshAll(); }
