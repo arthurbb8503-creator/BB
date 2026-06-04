@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Carteira Clara - v11.1: base v11 preservada + pagamento simplificado + teclado proprio -->
+<!-- Carteira Clara - v11.2: base v11 preservada + pagamento simplificado + teclado celular corrigido -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -278,6 +278,152 @@
     .login-status { color: var(--red); font-size: 12px; margin-top: 12px; min-height: 18px; text-align: center; }
     .cloud-status { font-size: 11px; color: var(--muted); align-self: center; white-space: nowrap; }
 
+
+    /* ── RECEBIMENTO RÁPIDO / TECLADO CELULAR ───── */
+    #paymentModal .modal {
+      width: min(520px, calc(100vw - 20px));
+      max-height: calc(100dvh - 24px);
+      border-radius: 18px;
+      overflow-x: hidden;
+    }
+    #paymentModal .modal-head {
+      padding: 20px 20px 14px;
+    }
+    #paymentModal .modal-head h2 {
+      font-size: 28px;
+      line-height: 1.05;
+    }
+    #paymentModal .modal-head .subtitle {
+      max-width: 310px;
+      line-height: 1.45;
+    }
+    #paymentModal .modal-head button {
+      flex-shrink: 0;
+    }
+    #paymentModal .modal-body {
+      padding: 18px 20px 20px;
+      overflow-x: hidden;
+    }
+    #paymentModal .form-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    #paymentModal label {
+      margin-bottom: 6px;
+    }
+    .amount-entry {
+      display: grid;
+      gap: 12px;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .amount-display {
+      height: 62px;
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(26px, 7vw, 38px);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--text);
+      background: var(--surface);
+      border-color: var(--gold-line);
+      border-radius: 14px;
+    }
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 9px;
+      width: 100%;
+      max-width: 100%;
+    }
+    .keypad button {
+      width: 100%;
+      min-width: 0;
+      height: 58px;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      border-radius: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: none;
+      background: var(--gold);
+      color: #080705;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .keypad button.action {
+      font-size: 14px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .keypad button:active {
+      transform: scale(0.98);
+      background: var(--gold-hover);
+    }
+    .payment-preview {
+      display: grid;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .preview-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+    .preview-box span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .preview-box strong {
+      font-family: 'Space Mono', monospace;
+      font-size: 15px;
+      white-space: nowrap;
+      color: var(--text);
+    }
+    .advanced-payment {
+      margin-top: 12px;
+      color: var(--text-2);
+    }
+    .advanced-payment summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-2);
+      margin-bottom: 8px;
+    }
+    #paymentModal textarea {
+      min-height: 72px;
+    }
+    #paymentModal .toolbar {
+      position: sticky;
+      bottom: -20px;
+      background: linear-gradient(to top, var(--surface-2) 80%, rgba(20,16,9,0));
+      padding-top: 18px;
+      margin-top: 14px;
+    }
+    #paymentSaveBtn {
+      width: 100%;
+      justify-content: center;
+      height: 52px;
+      border-radius: 12px;
+      font-size: 13px;
+    }
+    #paymentModal .row-actions {
+      width: 100%;
+    }
+
+
     .modal-backdrop.show { pointer-events: auto; }
     .modal { pointer-events: auto; }
 
@@ -315,6 +461,50 @@
       .top-actions { gap: 8px; }
       .top-actions button { padding: 9px 13px; }
     }
+  
+
+    @media (max-width: 480px) {
+      #paymentModal.modal-backdrop {
+        padding: 8px;
+        align-items: center;
+      }
+      #paymentModal .modal {
+        width: calc(100vw - 16px);
+        max-height: calc(100dvh - 16px);
+        border-radius: 16px;
+      }
+      #paymentModal .modal-head {
+        padding: 18px 16px 12px;
+      }
+      #paymentModal .modal-head h2 {
+        font-size: 25px;
+      }
+      #paymentModal .modal-head .subtitle {
+        font-size: 12px;
+      }
+      #paymentModal .modal-body {
+        padding: 14px 16px 18px;
+      }
+      .amount-display {
+        height: 58px;
+        font-size: 30px;
+      }
+      .keypad {
+        gap: 8px;
+      }
+      .keypad button {
+        height: 54px;
+        border-radius: 13px;
+        font-size: 21px;
+      }
+      .keypad button.action {
+        font-size: 12px;
+      }
+      .preview-box strong {
+        font-size: 14px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -465,7 +655,7 @@
 
   <div id="loanModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="loanModalTitle">Nova operação</h2><p class="subtitle">A taxa é por período. Ex: 10% a cada 10 dias.</p></div><button class="ghost small" onclick="closeModal('loanModal')">✕ Fechar</button></div><div class="modal-body"><div class="notice">Juros sem capitalização e com parcela fixa: o juros do período é calculado sobre o valor original da operação e não diminui quando houver amortização de capital. Para operações mensais, use vencimento entre os dias 1 e 28; dias 29, 30 e 31 são bloqueados para evitar erro em fevereiro e meses menores.</div><div id="loanLockNotice" class="notice locked-note" style="display:none">Esta operação está protegida contra alteração acidental. Clique em <strong>Liberar edição</strong> para alterar os campos.</div><form id="loanForm" onsubmit="saveLoan(event)"><input type="hidden" id="loanId"><div class="form-grid"><div class="full"><label>Pessoa</label><select id="loanPerson" required></select></div><div><label>Data do empréstimo</label><input id="loanDate" type="date" required></div><div><label>Valor emprestado</label><input id="loanAmount" type="number" min="0" step="0.01" required placeholder="1000,00"></div><div><label>Taxa de juros por período (%)</label><input id="loanRate" type="number" min="0" step="0.01" required placeholder="10"></div><div><label>Período da taxa</label><select id="loanPeriodDays"><option value="5">A cada 5 dias</option><option value="10" selected>A cada 10 dias</option><option value="15">A cada 15 dias</option><option value="monthly">Mensal</option><option value="custom">Personalizado</option></select></div><div><label>Dias do período personalizado</label><input id="loanCustomDays" type="number" min="1" step="1" placeholder="Ex: 20"></div><div><label>Primeiro vencimento</label><input id="loanFirstDue" type="date"></div><div><label>Status</label><select id="loanStatus"><option value="open">Aberta</option><option value="closed">Quitada</option><option value="paused">Pausada</option><option value="renegotiated">Renegociada</option></select></div><div class="full"><label>Observações do combinado</label><textarea id="loanNotes" placeholder="Ex: juros pagos de 10 em 10 dias, capital quando puder..."></textarea></div></div><div class="toolbar"><button id="loanUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('loan')">Liberar edição</button><button id="loanSaveBtn" type="submit">Salvar operação</button></div></form></div></div></div>
 
-  <div id="paymentModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="paymentModalTitle">Registrar recebimento</h2><p class="subtitle">Informe apenas quanto entrou. O sistema distribui internamente: capital, juros e outros.</p></div><button class="ghost small" onclick="closeModal('paymentModal')">✕ Fechar</button></div><div class="modal-body"><div id="paymentLockNotice" class="notice locked-note" style="display:none">Este pagamento está protegido contra alteração acidental. Clique em <strong>Liberar edição</strong> para corrigir os dados.</div><form id="paymentForm" onsubmit="savePayment(event)"><input type="hidden" id="paymentId"><input type="hidden" id="paymentTotal"><div class="form-grid"><div class="full"><label>Operação</label><select id="paymentLoan" required onchange="suggestPaymentSplit(true)"></select></div><div><label>Data do recebimento</label><input id="paymentDate" type="date" required></div><div class="full"><label>Quanto recebeu?</label><div class="amount-entry"><input id="paymentAmountDisplay" class="amount-display" type="text" readonly value="R$ 0,00"><div class="keypad" aria-label="Teclado de pagamento"><button type="button" onclick="paymentPad('1')">1</button><button type="button" onclick="paymentPad('2')">2</button><button type="button" onclick="paymentPad('3')">3</button><button type="button" onclick="paymentPad('4')">4</button><button type="button" onclick="paymentPad('5')">5</button><button type="button" onclick="paymentPad('6')">6</button><button type="button" onclick="paymentPad('7')">7</button><button type="button" onclick="paymentPad('8')">8</button><button type="button" onclick="paymentPad('9')">9</button><button type="button" class="action" onclick="paymentPad('clear')">Limpar</button><button type="button" onclick="paymentPad('0')">0</button><button type="button" class="action" onclick="paymentPad('back')">Apagar</button></div><div id="paymentPreview" class="payment-preview"><div class="preview-box"><span>Saldo antes</span><strong>R$ 0,00</strong></div><div class="preview-box"><span>Recebimento</span><strong>R$ 0,00</strong></div><div class="preview-box"><span>Saldo depois</span><strong>R$ 0,00</strong></div></div></div></div><div class="full"><label>Observação</label><textarea id="paymentNotes" placeholder="Ex: Pix recebido, pagamento parcial, combinado específico..."></textarea></div></div><details class="advanced-payment"><summary>Distribuição interna</summary><div class="notice" style="margin-top:12px">Essa parte fica preservada para manter a base antiga funcionando. Em uso normal, preencha só o valor recebido acima.</div><div class="form-grid"><div><label>Parte para capital</label><input id="paymentPrincipal" type="number" min="0" step="0.01" placeholder="0,00" oninput="refreshPaymentPreview()"></div><div><label>Parte para juros</label><input id="paymentInterest" type="number" min="0" step="0.01" placeholder="0,00" oninput="refreshPaymentPreview()"></div><div><label>Outros recebimentos</label><input id="paymentOther" type="number" min="0" step="0.01" placeholder="0,00" oninput="refreshPaymentPreview()"></div></div></details><div id="paymentSuggestion" class="pill-row"><span class="pill">Distribuição automática: primeiro capital, depois juros, depois outros.</span></div><div class="toolbar"><button id="paymentUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('payment')">Liberar edição</button><div class="row-actions"><button id="paymentDeleteBtn" type="button" class="danger" style="display:none" onclick="deletePaymentFromModal()">Excluir pagamento</button><button id="paymentSaveBtn" type="submit">Confirmar recebimento</button></div></div></form></div></div></div>
+  <div id="paymentModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="paymentModalTitle">Registrar recebimento</h2><p class="subtitle">Digite o valor recebido. O sistema organiza a distribuição por trás.</p></div><button class="ghost small" onclick="closeModal('paymentModal')">✕ Fechar</button></div><div class="modal-body"><div id="paymentLockNotice" class="notice locked-note" style="display:none">Este pagamento está protegido contra alteração acidental. Clique em <strong>Liberar edição</strong> para corrigir os dados.</div><form id="paymentForm" onsubmit="savePayment(event)"><input type="hidden" id="paymentId"><input type="hidden" id="paymentTotal"><div class="form-grid"><div class="full"><label>Operação</label><select id="paymentLoan" required onchange="suggestPaymentSplit(true)"></select></div><div><label>Data do recebimento</label><input id="paymentDate" type="date" required></div><div class="full"><label>Quanto recebeu?</label><div class="amount-entry"><input id="paymentAmountDisplay" class="amount-display" type="text" readonly value="R$ 0,00"><div class="keypad" aria-label="Teclado de pagamento"><button type="button" onclick="paymentPad('1')">1</button><button type="button" onclick="paymentPad('2')">2</button><button type="button" onclick="paymentPad('3')">3</button><button type="button" onclick="paymentPad('4')">4</button><button type="button" onclick="paymentPad('5')">5</button><button type="button" onclick="paymentPad('6')">6</button><button type="button" onclick="paymentPad('7')">7</button><button type="button" onclick="paymentPad('8')">8</button><button type="button" onclick="paymentPad('9')">9</button><button type="button" class="action" onclick="paymentPad('clear')">Limpar</button><button type="button" onclick="paymentPad('0')">0</button><button type="button" class="action" onclick="paymentPad('back')">⌫</button></div><div id="paymentPreview" class="payment-preview"><div class="preview-box"><span>Saldo antes</span><strong>R$ 0,00</strong></div><div class="preview-box"><span>Recebimento</span><strong>R$ 0,00</strong></div><div class="preview-box"><span>Saldo depois</span><strong>R$ 0,00</strong></div></div></div></div><div class="full"><label>Observação</label><textarea id="paymentNotes" placeholder="Ex: Pix recebido, pagamento parcial, combinado específico..."></textarea></div></div><details class="advanced-payment"><summary>Distribuição interna</summary><div class="notice" style="margin-top:12px">Essa parte fica preservada para manter a base antiga funcionando. Em uso normal, preencha só o valor recebido acima.</div><div class="form-grid"><div><label>Parte para capital</label><input id="paymentPrincipal" type="number" min="0" step="0.01" placeholder="0,00" oninput="refreshPaymentPreview()"></div><div><label>Parte para juros</label><input id="paymentInterest" type="number" min="0" step="0.01" placeholder="0,00" oninput="refreshPaymentPreview()"></div><div><label>Outros recebimentos</label><input id="paymentOther" type="number" min="0" step="0.01" placeholder="0,00" oninput="refreshPaymentPreview()"></div></div></details><div id="paymentSuggestion" class="pill-row"><span class="pill">Distribuição automática: primeiro capital, depois juros, depois outros.</span></div><div class="toolbar"><button id="paymentUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('payment')">Liberar edição</button><div class="row-actions"><button id="paymentDeleteBtn" type="button" class="danger" style="display:none" onclick="deletePaymentFromModal()">Excluir pagamento</button><button id="paymentSaveBtn" type="submit">Confirmar recebimento</button></div></div></form></div></div></div>
 
   <div id="expenseModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="expenseModalTitle">Nova despesa</h2><p class="subtitle">Informe despesas da operação para calcular o resultado mensal.</p></div><button class="ghost small" onclick="closeModal('expenseModal')">✕ Fechar</button></div><div class="modal-body"><div id="expenseLockNotice" class="notice locked-note" style="display:none">Esta despesa está protegida contra alteração acidental. Clique em <strong>Liberar edição</strong> para corrigir os dados.</div><form id="expenseForm" onsubmit="saveExpense(event)"><input type="hidden" id="expenseId"><div class="form-grid"><div><label>Data da despesa</label><input id="expenseDate" type="date" required></div><div><label>Valor</label><input id="expenseAmount" type="number" min="0" step="0.01" required placeholder="0,00"></div><div><label>Categoria</label><input id="expenseCategory" placeholder="Ex: transporte, cartório, taxa..."></div><div><label>Forma</label><input id="expenseMethod" placeholder="Pix, dinheiro, cartão..."></div><div class="full"><label>Descrição</label><textarea id="expenseDescription" placeholder="Ex: custo para cobrar, deslocamento, impressão, taxa bancária..."></textarea></div></div><div class="toolbar"><button id="expenseUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('expense')">Liberar edição</button><div class="row-actions"><button id="expenseDeleteBtn" type="button" class="danger" style="display:none" onclick="deleteExpenseFromModal()">Excluir despesa</button><button id="expenseSaveBtn" type="submit">Salvar despesa</button></div></div></form></div></div></div>
 
