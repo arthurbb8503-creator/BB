@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Carteira Clara Firebase v12.2 - recuperação segura de dados antigos, sem sobrescrever base vazia -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -293,19 +294,57 @@
   function monthlyProfit(month){ return state.loans.flatMap(realizedProfitParts).filter(p=>monthOf(p.date)===month).reduce((s,p)=>s+p.profitThis,0); }
   function monthlyIncomeItems(month){ return state.loans.flatMap(l=>realizedProfitParts(l).filter(p=>monthOf(p.date)===month && p.profitThis>0).map(p=>({payment:p, loan:l, person:getPerson(l.personId)}))); }
   function addHistory(type, title, amount=0, refId='', note=''){ state.history.unshift({id:uid('hist'), type, title, amount:Number(amount||0), refId, note, at:new Date().toISOString(), date:todayISO()}); state.history = state.history.slice(0,500); }
-  function docRef(){ return doc(db, 'users', ADMIN_UID, 'carteira', 'main'); }
+  function docRef(){ return doc(db, 'users', (user && user.uid) ? user.uid : ADMIN_UID, 'carteira', 'main'); }
   function setSaveStatus(txt){ const b=document.getElementById('saveStatusBtn'); if(b) b.textContent=txt; }
-  async function saveNow(){ if(!user || !loaded) return; saving=true; setSaveStatus('Salvando...'); try{ state.updatedAt = new Date().toISOString(); await setDoc(docRef(), {...state, firestoreUpdatedAt:serverTimestamp()}); setSaveStatus('Salvo'); }catch(e){ console.error(e); setSaveStatus('Erro ao salvar'); alert('Erro ao salvar no Firebase: '+e.message); } finally { saving=false; } }
+  function hasMeaningfulData(obj){
+    if(!obj) return false;
+    const cfg = obj.config || {};
+    return (Array.isArray(obj.people) && obj.people.length>0) ||
+           (Array.isArray(obj.loans) && obj.loans.length>0) ||
+           (Array.isArray(obj.payments) && obj.payments.length>0) ||
+           (Array.isArray(obj.expenses) && obj.expenses.length>0) ||
+           Number(cfg.capitalTotal||cfg.totalCapital||obj.capitalTotal||obj.totalCapital||0) > 0;
+  }
+  async function saveNow(){ if(!user || !loaded) return; saving=true; setSaveStatus('Salvando...'); try{ state.updatedAt = new Date().toISOString(); await setDoc(docRef(), {...state, firestoreUpdatedAt:serverTimestamp()}, { merge:false }); setSaveStatus('Salvo'); }catch(e){ console.error(e); setSaveStatus('Erro ao salvar'); alert('Erro ao salvar no Firebase: '+e.message); } finally { saving=false; } }
   function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveNow, 450); }
-  async function loadData(){ const snap = await getDoc(docRef()); if(snap.exists()) state = normalizeLoadedState(snap.data()); else { state=freshState(); await setDoc(docRef(), state); } loaded=true; refreshAll(); if(unsub) unsub(); unsub = onSnapshot(docRef(), s=>{ if(s.exists() && !saving){ state=normalizeLoadedState(s.data()); loaded=true; refreshAll(false); } }); }
+  async function loadData(){
+    setSaveStatus('Carregando...');
+    const ref = docRef();
+    const snap = await getDoc(ref);
+    if(snap.exists()){
+      const raw = snap.data();
+      state = normalizeLoadedState(raw);
+      if(!hasMeaningfulData(raw)){
+        console.warn('Documento encontrado, mas sem dados relevantes. A versão não vai sobrescrever automaticamente.');
+        setSaveStatus('Base vazia');
+      } else {
+        setSaveStatus('Dados carregados');
+      }
+    } else {
+      // Segurança: não cria documento vazio automaticamente. Só salva quando o usuário cadastrar algo.
+      state = freshState();
+      setSaveStatus('Sem base');
+      alert('Não encontrei dados no caminho esperado do Firebase. Não sobrescrevi nada. Confira se você está no mesmo projeto/usuário ou veja o Firestore em users/' + ((user && user.uid) || ADMIN_UID) + '/carteira/main.');
+    }
+    loaded=true;
+    refreshAll(false);
+    if(unsub) unsub();
+    unsub = onSnapshot(ref, s=>{ if(s.exists() && !saving){ state=normalizeLoadedState(s.data()); loaded=true; refreshAll(false); } });
+  }
   function normalizeLoadedState(data){
-    const merged = {...freshState(), ...data, config:{...freshState().config, ...(data.config||{})}};
+    data = data || {};
+    const oldConfig = data.config || {};
+    const normalizedCapital = Number(oldConfig.capitalTotal ?? oldConfig.totalCapital ?? data.capitalTotal ?? data.totalCapital ?? 0) || 0;
+    const merged = {...freshState(), ...data, config:{...freshState().config, ...oldConfig, capitalTotal: normalizedCapital }};
     merged.people = Array.isArray(merged.people) ? merged.people : [];
     merged.loans = Array.isArray(merged.loans) ? merged.loans.map(l=>({
       ...l,
-      expectedReturn: loanExpectedReturn(l),
+      amount: Number(l.amount || l.valor || l.valorEmprestado || 0),
+      rate: Number(l.rate || l.taxa || 0),
+      expectedReturn: Number(l.expectedReturn ?? l.expectedProfit ?? loanExpectedReturn(l) ?? 0),
       period: l.period || (String(l.periodDays)==='monthly' || String(l.periodDays)==='30' ? 'monthly' : (String(l.periodDays)==='15'?'15d':'10d')),
-      firstDue: l.firstDue || l.nextDue || l.date || todayISO()
+      firstDue: l.firstDue || l.nextDue || l.date || todayISO(),
+      status: l.status || 'open'
     })) : [];
     merged.payments = Array.isArray(merged.payments) ? merged.payments.map(p=>({ ...p, amount: paymentAmount(p) })) : [];
     merged.additions = Array.isArray(merged.additions) ? merged.additions : [];
