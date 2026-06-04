@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Carteira Clara - v11: juros fixo pelo valor original + prioridade de pagamento no capital -->
+<!-- Carteira Clara - v11.1: base v11 preservada + pagamento simplificado + teclado proprio -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -35,7 +35,8 @@
       --radius-lg:   13px;
     }
 
-    html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+    html { touch-action: manipulation; -webkit-text-size-adjust: 100%; width:100%; max-width:100%; overflow-x:hidden; }
+    body { width:100%; max-width:100%; overflow-x:hidden; }
 
     body {
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -247,7 +248,7 @@
     .modal-body { padding: 20px; }
     .modal .notice { margin-bottom: 16px; }
 
-    body.modal-open { overflow: hidden; touch-action: none; }
+    body.modal-open { overflow: hidden; touch-action: none; position: fixed; width: 100%; }
     .app-hidden { display: none !important; }
     .login-screen {
       min-height: 100vh;
@@ -464,7 +465,7 @@
 
   <div id="loanModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="loanModalTitle">Nova operação</h2><p class="subtitle">A taxa é por período. Ex: 10% a cada 10 dias.</p></div><button class="ghost small" onclick="closeModal('loanModal')">✕ Fechar</button></div><div class="modal-body"><div class="notice">Juros sem capitalização e com parcela fixa: o juros do período é calculado sobre o valor original da operação e não diminui quando houver amortização de capital. Para operações mensais, use vencimento entre os dias 1 e 28; dias 29, 30 e 31 são bloqueados para evitar erro em fevereiro e meses menores.</div><div id="loanLockNotice" class="notice locked-note" style="display:none">Esta operação está protegida contra alteração acidental. Clique em <strong>Liberar edição</strong> para alterar os campos.</div><form id="loanForm" onsubmit="saveLoan(event)"><input type="hidden" id="loanId"><div class="form-grid"><div class="full"><label>Pessoa</label><select id="loanPerson" required></select></div><div><label>Data do empréstimo</label><input id="loanDate" type="date" required></div><div><label>Valor emprestado</label><input id="loanAmount" type="number" min="0" step="0.01" required placeholder="1000,00"></div><div><label>Taxa de juros por período (%)</label><input id="loanRate" type="number" min="0" step="0.01" required placeholder="10"></div><div><label>Período da taxa</label><select id="loanPeriodDays"><option value="5">A cada 5 dias</option><option value="10" selected>A cada 10 dias</option><option value="15">A cada 15 dias</option><option value="monthly">Mensal</option><option value="custom">Personalizado</option></select></div><div><label>Dias do período personalizado</label><input id="loanCustomDays" type="number" min="1" step="1" placeholder="Ex: 20"></div><div><label>Primeiro vencimento</label><input id="loanFirstDue" type="date"></div><div><label>Status</label><select id="loanStatus"><option value="open">Aberta</option><option value="closed">Quitada</option><option value="paused">Pausada</option><option value="renegotiated">Renegociada</option></select></div><div class="full"><label>Observações do combinado</label><textarea id="loanNotes" placeholder="Ex: juros pagos de 10 em 10 dias, capital quando puder..."></textarea></div></div><div class="toolbar"><button id="loanUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('loan')">Liberar edição</button><button id="loanSaveBtn" type="submit">Salvar operação</button></div></form></div></div></div>
 
-  <div id="paymentModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="paymentModalTitle">Registrar pagamento</h2><p class="subtitle">Separe capital, juros e outros recebimentos. Campos vazios contam como zero.</p></div><button class="ghost small" onclick="closeModal('paymentModal')">✕ Fechar</button></div><div class="modal-body"><div id="paymentLockNotice" class="notice locked-note" style="display:none">Este pagamento está protegido contra alteração acidental. Clique em <strong>Liberar edição</strong> para corrigir os dados.</div><form id="paymentForm" onsubmit="savePayment(event)"><input type="hidden" id="paymentId"><div class="form-grid"><div class="full"><label>Operação</label><select id="paymentLoan" required onchange="suggestPaymentSplit()"></select></div><div><label>Data do pagamento</label><input id="paymentDate" type="date" required></div><div><label>Valor total recebido</label><input id="paymentTotal" type="number" min="0" step="0.01" required placeholder="0,00" oninput="suggestPaymentSplit()"></div><div><label>Parte para capital</label><input id="paymentPrincipal" type="number" min="0" step="0.01" placeholder="0,00"></div><div><label>Parte para juros</label><input id="paymentInterest" type="number" min="0" step="0.01" placeholder="0,00"></div><div><label>Outros recebimentos</label><input id="paymentOther" type="number" min="0" step="0.01" placeholder="0,00"></div><div class="full"><label>Observação</label><textarea id="paymentNotes" placeholder="Ex: Pix recebido, multa, mora, taxa, combinado específico..."></textarea></div></div><div id="paymentSuggestion" class="pill-row"><span class="pill">Sugestão: primeiro abater capital, depois juros, depois outros</span><button type="button" class="secondary small" onclick="suggestPaymentSplit(true)">Aplicar sugestão</button></div><div class="toolbar"><button id="paymentUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('payment')">Liberar edição</button><div class="row-actions"><button id="paymentDeleteBtn" type="button" class="danger" style="display:none" onclick="deletePaymentFromModal()">Excluir pagamento</button><button id="paymentSaveBtn" type="submit">Salvar pagamento</button></div></div></form></div></div></div>
+  <div id="paymentModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="paymentModalTitle">Registrar recebimento</h2><p class="subtitle">Informe apenas quanto entrou. O sistema distribui internamente: capital, juros e outros.</p></div><button class="ghost small" onclick="closeModal('paymentModal')">✕ Fechar</button></div><div class="modal-body"><div id="paymentLockNotice" class="notice locked-note" style="display:none">Este pagamento está protegido contra alteração acidental. Clique em <strong>Liberar edição</strong> para corrigir os dados.</div><form id="paymentForm" onsubmit="savePayment(event)"><input type="hidden" id="paymentId"><input type="hidden" id="paymentTotal"><div class="form-grid"><div class="full"><label>Operação</label><select id="paymentLoan" required onchange="suggestPaymentSplit(true)"></select></div><div><label>Data do recebimento</label><input id="paymentDate" type="date" required></div><div class="full"><label>Quanto recebeu?</label><div class="amount-entry"><input id="paymentAmountDisplay" class="amount-display" type="text" readonly value="R$ 0,00"><div class="keypad" aria-label="Teclado de pagamento"><button type="button" onclick="paymentPad('1')">1</button><button type="button" onclick="paymentPad('2')">2</button><button type="button" onclick="paymentPad('3')">3</button><button type="button" onclick="paymentPad('4')">4</button><button type="button" onclick="paymentPad('5')">5</button><button type="button" onclick="paymentPad('6')">6</button><button type="button" onclick="paymentPad('7')">7</button><button type="button" onclick="paymentPad('8')">8</button><button type="button" onclick="paymentPad('9')">9</button><button type="button" class="action" onclick="paymentPad('clear')">Limpar</button><button type="button" onclick="paymentPad('0')">0</button><button type="button" class="action" onclick="paymentPad('back')">Apagar</button></div><div id="paymentPreview" class="payment-preview"><div class="preview-box"><span>Saldo antes</span><strong>R$ 0,00</strong></div><div class="preview-box"><span>Recebimento</span><strong>R$ 0,00</strong></div><div class="preview-box"><span>Saldo depois</span><strong>R$ 0,00</strong></div></div></div></div><div class="full"><label>Observação</label><textarea id="paymentNotes" placeholder="Ex: Pix recebido, pagamento parcial, combinado específico..."></textarea></div></div><details class="advanced-payment"><summary>Distribuição interna</summary><div class="notice" style="margin-top:12px">Essa parte fica preservada para manter a base antiga funcionando. Em uso normal, preencha só o valor recebido acima.</div><div class="form-grid"><div><label>Parte para capital</label><input id="paymentPrincipal" type="number" min="0" step="0.01" placeholder="0,00" oninput="refreshPaymentPreview()"></div><div><label>Parte para juros</label><input id="paymentInterest" type="number" min="0" step="0.01" placeholder="0,00" oninput="refreshPaymentPreview()"></div><div><label>Outros recebimentos</label><input id="paymentOther" type="number" min="0" step="0.01" placeholder="0,00" oninput="refreshPaymentPreview()"></div></div></details><div id="paymentSuggestion" class="pill-row"><span class="pill">Distribuição automática: primeiro capital, depois juros, depois outros.</span></div><div class="toolbar"><button id="paymentUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('payment')">Liberar edição</button><div class="row-actions"><button id="paymentDeleteBtn" type="button" class="danger" style="display:none" onclick="deletePaymentFromModal()">Excluir pagamento</button><button id="paymentSaveBtn" type="submit">Confirmar recebimento</button></div></div></form></div></div></div>
 
   <div id="expenseModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="expenseModalTitle">Nova despesa</h2><p class="subtitle">Informe despesas da operação para calcular o resultado mensal.</p></div><button class="ghost small" onclick="closeModal('expenseModal')">✕ Fechar</button></div><div class="modal-body"><div id="expenseLockNotice" class="notice locked-note" style="display:none">Esta despesa está protegida contra alteração acidental. Clique em <strong>Liberar edição</strong> para corrigir os dados.</div><form id="expenseForm" onsubmit="saveExpense(event)"><input type="hidden" id="expenseId"><div class="form-grid"><div><label>Data da despesa</label><input id="expenseDate" type="date" required></div><div><label>Valor</label><input id="expenseAmount" type="number" min="0" step="0.01" required placeholder="0,00"></div><div><label>Categoria</label><input id="expenseCategory" placeholder="Ex: transporte, cartório, taxa..."></div><div><label>Forma</label><input id="expenseMethod" placeholder="Pix, dinheiro, cartão..."></div><div class="full"><label>Descrição</label><textarea id="expenseDescription" placeholder="Ex: custo para cobrar, deslocamento, impressão, taxa bancária..."></textarea></div></div><div class="toolbar"><button id="expenseUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('expense')">Liberar edição</button><div class="row-actions"><button id="expenseDeleteBtn" type="button" class="danger" style="display:none" onclick="deleteExpenseFromModal()">Excluir despesa</button><button id="expenseSaveBtn" type="submit">Salvar despesa</button></div></div></form></div></div></div>
 
@@ -657,6 +658,7 @@
       var form = document.getElementById(prefix + 'Form');
       if (!form) return;
       form.querySelectorAll('input, select, textarea').forEach(function(el){ if (el.type !== 'hidden') el.disabled = locked; });
+      form.querySelectorAll('.keypad button').forEach(function(btn){ btn.disabled = locked; });
       var saveBtn = document.getElementById(prefix + 'SaveBtn');
       var unlockBtn = document.getElementById(prefix + 'UnlockBtn');
       var notice = document.getElementById(prefix + 'LockNotice');
@@ -823,10 +825,84 @@
     function openLoanModal(id, presetPersonId) { loanForm.reset(); loanId.value = id || ''; loanModalTitle.textContent = id ? 'Operação cadastrada' : 'Nova operação'; renderPersonOptions(); loanDate.value = todayISO(); loanPeriodDays.value = '10'; loanStatus.value = 'open'; if (presetPersonId) loanPerson.value = presetPersonId; if (id) { var l=getLoan(id); loanPerson.value=l.personId; loanDate.value=l.date; loanAmount.value=l.amount; loanRate.value=l.rate; loanPeriodDays.value=l.periodDays; loanCustomDays.value=l.customDays||''; loanFirstDue.value=l.firstDue||''; loanStatus.value=l.status||'open'; loanNotes.value=l.notes||''; } showModal('loanModal'); setFormLocked('loan', !!id); }
     function saveLoan(e) { e.preventDefault(); if(!loanPerson.value) { alert('Cadastre uma pessoa antes.'); return; } var pd = loanPeriodDays.value; var custom = pd === 'custom' ? Number(loanCustomDays.value || 0) : ''; if(pd === 'custom' && custom <= 0) { alert('Informe os dias do período personalizado.'); return; } var id=loanId.value || uid('loan'); var defaultFirstDue = pd === 'monthly' ? addMonths(loanDate.value, 1) : addDays(loanDate.value, pd === 'custom' ? custom : Number(pd)); var finalFirstDue = loanFirstDue.value || defaultFirstDue; if(pd === 'monthly' && !isSafeMonthlyDay(finalFirstDue)) { alert('Para operação mensal, o vencimento precisa ficar entre os dias 1 e 28. Dias 29, 30 e 31 foram bloqueados para evitar erro em fevereiro e em meses com menos dias. Informe um primeiro vencimento válido.'); loanFirstDue.focus(); return; } var data={ id:id, personId:loanPerson.value, date:loanDate.value, amount:Number(loanAmount.value), rate:Number(loanRate.value), periodDays:pd, customDays:custom, firstDue:finalFirstDue, status:loanStatus.value, notes:loanNotes.value.trim() }; var i=state.loans.findIndex(l => l.id===id); var p=getPerson(data.personId); if(i>=0) { var before=Object.assign({}, state.loans[i]); state.loans[i]=data; addHistory('loan_edited', 'Operação editada: ' + (p?p.name:'Sem nome'), 0, diffText(before, data, {personId:'Pessoa',date:'Data',amount:'Valor',rate:'Taxa',periodDays:'Período',customDays:'Período personalizado',firstDue:'Primeiro vencimento',status:'Status',notes:'Observações'})); } else { state.loans.push(data); addHistory('loan_created', 'Valor emprestado para ' + (p?p.name:'Sem nome'), data.amount, Number(data.rate) + '% / ' + periodLabel(data) + ' · início ' + formatDate(data.date)); } closeModal('loanModal'); refreshAll(); }
 
-    function openPaymentModal(paymentId, loanId) { paymentForm.reset(); paymentId = paymentId || ''; document.getElementById('paymentId').value = paymentId; paymentModalTitle.textContent = paymentId ? 'Pagamento registrado' : 'Registrar pagamento'; var existing = paymentId ? getPayment(paymentId) : null; renderPaymentOptions(existing ? existing.loanId : loanId); paymentDate.value = todayISO(); paymentDeleteBtn.style.display = paymentId ? 'inline-flex' : 'none'; paymentSuggestion.style.display = paymentId ? 'none' : 'flex'; paymentTotal.placeholder='0,00'; paymentInterest.placeholder='0,00'; paymentPrincipal.placeholder='0,00'; paymentOther.placeholder='0,00'; if (existing) { paymentLoan.value=existing.loanId; paymentDate.value=existing.date; paymentInterest.value=existing.interest || ''; paymentPrincipal.value=existing.principal || ''; paymentOther.value=existing.other || ''; paymentTotal.value=(Number(existing.interest||0)+Number(existing.principal||0)+Number(existing.other||0)).toFixed(2); paymentNotes.value=existing.notes||''; } else if (loanId) { paymentLoan.value = loanId; paymentInterest.value=''; paymentPrincipal.value=''; paymentOther.value=''; paymentTotal.value=''; } showModal('paymentModal'); setFormLocked('payment', !!existing); }
+    var paymentPadCents = 0;
+    function setPaymentAmountFromNumber(value) {
+      paymentPadCents = Math.max(0, Math.round(Number(value || 0) * 100));
+      var decimal = (paymentPadCents / 100).toFixed(2);
+      paymentTotal.value = decimal;
+      paymentAmountDisplay.value = money(decimal);
+      suggestPaymentSplit(true);
+    }
+    function paymentPad(key) {
+      if (paymentSaveBtn && paymentSaveBtn.disabled) return;
+      if (key === 'clear') paymentPadCents = 0;
+      else if (key === 'back') paymentPadCents = Math.floor(paymentPadCents / 10);
+      else paymentPadCents = Math.min(9999999999, Number(String(paymentPadCents) + String(key)));
+      var decimal = (paymentPadCents / 100).toFixed(2);
+      paymentTotal.value = decimal;
+      paymentAmountDisplay.value = money(decimal);
+      suggestPaymentSplit(true);
+    }
+    function refreshPaymentPreview() {
+      var l = getLoan(paymentLoan.value);
+      var total = Number(paymentTotal.value || 0);
+      if (!l || !document.getElementById('paymentPreview')) return;
+      var existing = paymentId.value ? getPayment(paymentId.value) : null;
+      var before = calcLoan(l).balance;
+      if (existing && existing.loanId === l.id) before = clampMoney(before + Number(existing.principal||0) + Number(existing.interest||0));
+      var after = clampMoney(before - total);
+      paymentPreview.innerHTML = '<div class="preview-box"><span>Saldo antes</span><strong>' + money(before) + '</strong></div><div class="preview-box"><span>Recebimento</span><strong>' + money(total) + '</strong></div><div class="preview-box"><span>Saldo depois</span><strong>' + money(after) + '</strong></div>';
+    }
+    function openPaymentModal(paymentIdArg, loanId) {
+      paymentForm.reset();
+      paymentPadCents = 0;
+      document.getElementById('paymentId').value = paymentIdArg || '';
+      paymentModalTitle.textContent = paymentIdArg ? 'Pagamento registrado' : 'Registrar recebimento';
+      var existing = paymentIdArg ? getPayment(paymentIdArg) : null;
+      renderPaymentOptions(existing ? existing.loanId : loanId);
+      paymentDate.value = todayISO();
+      paymentDeleteBtn.style.display = paymentIdArg ? 'inline-flex' : 'none';
+      paymentSuggestion.style.display = paymentIdArg ? 'none' : 'flex';
+      paymentAmountDisplay.value = money(0);
+      paymentTotal.value = '';
+      paymentInterest.value = '';
+      paymentPrincipal.value = '';
+      paymentOther.value = '';
+      if (existing) {
+        paymentLoan.value=existing.loanId;
+        paymentDate.value=existing.date;
+        paymentInterest.value=existing.interest || '';
+        paymentPrincipal.value=existing.principal || '';
+        paymentOther.value=existing.other || '';
+        setPaymentAmountFromNumber(Number(existing.interest||0)+Number(existing.principal||0)+Number(existing.other||0));
+        paymentNotes.value=existing.notes||'';
+      } else if (loanId) {
+        paymentLoan.value = loanId;
+        setPaymentAmountFromNumber(0);
+      } else {
+        setPaymentAmountFromNumber(0);
+      }
+      showModal('paymentModal');
+      setFormLocked('payment', !!existing);
+      refreshPaymentPreview();
+    }
     function splitPaymentByPriority(total, loan, oldPayment) { var c = calcLoan(loan); var principalAllowance = c.principal + (oldPayment && oldPayment.loanId === loan.id ? Number(oldPayment.principal || 0) : 0); var principal = Math.min(total, Math.max(0, principalAllowance)); var rest = Math.max(0, total - principal); var interestAllowance = c.unpaidInterest + (oldPayment && oldPayment.loanId === loan.id ? Number(oldPayment.interest || 0) : 0); var interest = Math.min(rest, Math.max(0, interestAllowance)); var other = Math.max(0, rest - interest); return { principal: clampMoney(principal), interest: clampMoney(interest), other: clampMoney(other) }; }
-    function suggestPaymentSplit(apply) { var l=getLoan(paymentLoan.value); if(!l) return; var totalText = String(paymentTotal.value || '').trim(); if (!totalText) { if (apply) { paymentPrincipal.value=''; paymentInterest.value=''; paymentOther.value=''; } return; } var existing = paymentId.value ? getPayment(paymentId.value) : null; var split = splitPaymentByPriority(Number(totalText || 0), l, existing); if(apply) { paymentPrincipal.value=split.principal ? split.principal.toFixed(2) : ''; paymentInterest.value=split.interest ? split.interest.toFixed(2) : ''; paymentOther.value=split.other ? split.other.toFixed(2) : ''; } }
-    function savePayment(e) { e.preventDefault(); var id = paymentId.value || uid('pay'); var total=Number(paymentTotal.value||0); var l=getLoan(paymentLoan.value); if(!l) return; var existingIndex = state.payments.findIndex(p => p.id === id); var oldPayment = existingIndex >= 0 ? Object.assign({}, state.payments[existingIndex]) : null; var hasBreakdown = String(paymentPrincipal.value||'').trim() !== '' || String(paymentInterest.value||'').trim() !== '' || String(paymentOther.value||'').trim() !== ''; var interest=Number(paymentInterest.value||0), principal=Number(paymentPrincipal.value||0), other=Number(paymentOther.value||0); if (!hasBreakdown && total > 0) { var autoSplit = splitPaymentByPriority(total, l, oldPayment); principal = autoSplit.principal; interest = autoSplit.interest; other = autoSplit.other; } if(Math.abs((interest+principal+other)-total) > 0.01) { alert('A soma de capital + juros + outros precisa bater com o total recebido. Se quiser usar a prioridade automática, preencha só o total e deixe capital/juros/outros em branco.'); return; } var c=calcLoan(l); var currentPrincipalAllowance = c.principal + (oldPayment && oldPayment.loanId === l.id ? Number(oldPayment.principal || 0) : 0); if(principal > currentPrincipalAllowance + 0.01) { alert('A amortização de capital não pode ser maior que o capital em aberto.'); return; } var data = { id:id, loanId:paymentLoan.value, date:paymentDate.value, interest:interest, principal:principal, other:other, notes:paymentNotes.value.trim() }; if(existingIndex >= 0) { state.payments[existingIndex] = data; addHistory('payment_edited', 'Pagamento editado: ' + personNameByLoan(data.loanId), total, diffText(oldPayment, data, {loanId:'Operação',date:'Data',interest:'Juros',principal:'Capital',other:'Outros',notes:'Observação'})); } else { state.payments.push(data); if (interest > 0) addHistory('interest_paid', 'Juros pago por ' + personNameByLoan(data.loanId), interest, 'Pagamento em ' + formatDate(data.date)); if (principal > 0) addHistory('principal_paid', 'Capital pago por ' + personNameByLoan(data.loanId), principal, 'Amortização em ' + formatDate(data.date)); if (other > 0) addHistory('other_paid', 'Outros recebimentos de ' + personNameByLoan(data.loanId), other, 'Multa, mora ou outro combinado em ' + formatDate(data.date)); if (interest <= 0 && principal <= 0 && other <= 0) addHistory('payment_edited', 'Pagamento registrado sem valor', 0, 'Registro em ' + formatDate(data.date)); }
+    function suggestPaymentSplit(apply) {
+      var l=getLoan(paymentLoan.value);
+      if(!l) return;
+      var total=Number(paymentTotal.value || 0);
+      var existing = paymentId.value ? getPayment(paymentId.value) : null;
+      var split = splitPaymentByPriority(total, l, existing);
+      if(apply) {
+        paymentPrincipal.value=split.principal ? split.principal.toFixed(2) : '';
+        paymentInterest.value=split.interest ? split.interest.toFixed(2) : '';
+        paymentOther.value=split.other ? split.other.toFixed(2) : '';
+      }
+      refreshPaymentPreview();
+    }
+    function savePayment(e) { e.preventDefault(); var id = paymentId.value || uid('pay'); var total=Number(paymentTotal.value||0); var l=getLoan(paymentLoan.value); if(!l) return; var existingIndex = state.payments.findIndex(p => p.id === id); var oldPayment = existingIndex >= 0 ? Object.assign({}, state.payments[existingIndex]) : null; var interest=Number(paymentInterest.value||0), principal=Number(paymentPrincipal.value||0), other=Number(paymentOther.value||0); var autoSplit = splitPaymentByPriority(total, l, oldPayment); if (Math.abs((interest+principal+other)-total) > 0.01) { principal = autoSplit.principal; interest = autoSplit.interest; other = autoSplit.other; }
+      if(total <= 0) { alert('Informe um valor recebido maior que zero.'); return; }
+      var c=calcLoan(l); var currentPrincipalAllowance = c.principal + (oldPayment && oldPayment.loanId === l.id ? Number(oldPayment.principal || 0) : 0); if(principal > currentPrincipalAllowance + 0.01) { alert('A amortização de capital não pode ser maior que o capital em aberto.'); return; } var data = { id:id, loanId:paymentLoan.value, date:paymentDate.value, interest:interest, principal:principal, other:other, notes:paymentNotes.value.trim() }; if(existingIndex >= 0) { state.payments[existingIndex] = data; addHistory('payment_edited', 'Pagamento editado: ' + personNameByLoan(data.loanId), total, diffText(oldPayment, data, {loanId:'Operação',date:'Data',interest:'Juros',principal:'Capital',other:'Outros',notes:'Observação'})); } else { state.payments.push(data); addHistory('principal_paid', 'Recebimento de ' + personNameByLoan(data.loanId), total, 'Distribuição automática · Capital: ' + money(principal) + ' · Juros: ' + money(interest) + ' · Outros: ' + money(other)); if (interest > 0) addHistory('interest_paid', 'Juros pago por ' + personNameByLoan(data.loanId), interest, 'Incluído no recebimento de ' + formatDate(data.date)); if (other > 0) addHistory('other_paid', 'Outros recebimentos de ' + personNameByLoan(data.loanId), other, 'Multa, mora ou outro combinado em ' + formatDate(data.date)); }
       var after=calcLoan(l); if(after.principal <= 0.01 && after.unpaidInterest <= 0.01) l.status='closed'; closeModal('paymentModal'); refreshAll(); }
     function deletePaymentFromModal() { var id = paymentId.value; var p = getPayment(id); if (!p) return; if (!confirm('Tem certeza que deseja excluir este pagamento?')) return; state.payments = state.payments.filter(x => x.id !== id); addHistory('payment_deleted', 'Pagamento excluído: ' + personNameByLoan(p.loanId), Number(p.interest || 0) + Number(p.principal || 0) + Number(p.other || 0), 'Juros: ' + money(p.interest) + ' · Capital: ' + money(p.principal) + ' · Outros: ' + money(p.other || 0) + ' · Data: ' + formatDate(p.date)); closeModal('paymentModal'); refreshAll(); }
 
