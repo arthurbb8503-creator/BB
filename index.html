@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<!-- Carteira Clara - v12.1: login persistente + "Operações ativas" + novo racional: saldo devedor = capital + juros fixo embutido; recebimento acima do capital vira lucro -->
+<!-- Carteira Clara - v13: boot com verificação de sessão + PWA (tela inicial) + atraso real (vencimento não rola sozinho) + movimentações de capital (aporte/retirada) + sincronização em tempo real (onSnapshot) + ficha da pessoa -->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#081410" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Carteira Clara" />
   <title>Carteira Clara</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -195,6 +199,7 @@
     .chip { color: var(--text-2); background: var(--surface-2); border-radius: 7px; padding: 4px 9px; font-size: 11px; letter-spacing: .02em; white-space: nowrap; }
     .chip.green-chip { color: var(--green); background: var(--green-dim); }
     .chip.yellow-chip { color: var(--amber); background: var(--amber-dim); }
+    .chip.red-chip { color: var(--red); background: var(--red-dim); }
 
     .status { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 7px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
     .status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .8; flex-shrink: 0; }
@@ -207,6 +212,8 @@
     .mini-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
     .mini-item:first-child { padding-top: 0; }
     .mini-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .mini-item.press { cursor: pointer; }
+    .mini-item.press:active { opacity: .75; }
     .mini-info { min-width: 0; }
     .mini-title { font-weight: 600; font-size: 14px; }
     .mini-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
@@ -362,7 +369,7 @@
     #paymentModal .toolbar { position: sticky; bottom: -22px; background: linear-gradient(to top, var(--surface) 82%, rgba(14,31,24,0)); padding-bottom: 4px; }
     #paymentSaveBtn { width: 100%; justify-content: center; height: 52px; border-radius: 14px; font-size: 13px; }
 
-    /* ── Login ────────────────────────────── */
+    /* ── Login / boot ─────────────────────── */
     .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 22px; }
     .login-card { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--mint-line); border-radius: var(--radius-lg); padding: 28px 24px; }
     .login-card .logo { margin: 0 auto 18px; }
@@ -370,6 +377,8 @@
     .login-card .subtitle { text-align: center; margin-bottom: 22px; }
     .login-status { color: var(--red); font-size: 12px; margin-top: 12px; min-height: 18px; text-align: center; }
     .app-hidden { display: none !important; }
+    .boot-pulse { animation: bootPulse 1.4s ease-in-out infinite; }
+    @keyframes bootPulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
 
     .green  { color: var(--green) !important; }
     .red    { color: var(--red)   !important; }
@@ -397,7 +406,15 @@
   </style>
 </head>
 <body>
-  <div id="loginScreen" class="login-screen">
+  <div id="bootScreen" class="login-screen">
+    <div class="login-card" style="text-align:center">
+      <div class="logo boot-pulse"></div>
+      <h1>Carteira Clara</h1>
+      <p class="subtitle" style="margin-bottom:0">Verificando sessão...</p>
+    </div>
+  </div>
+
+  <div id="loginScreen" class="login-screen app-hidden">
     <div class="login-card">
       <div class="logo"></div>
       <h1>Carteira Clara</h1>
@@ -408,7 +425,7 @@
         <button type="submit" style="width:100%;justify-content:center;height:50px">Entrar</button>
         <div id="loginStatus" class="login-status"></div>
       </form>
-      <div class="notice" style="margin-top:18px;margin-bottom:0">Firebase configurado para o projeto <strong>dinheiro-c7f91</strong>. Entre com usuário <strong>admin</strong>.</div>
+      <div class="notice" style="margin-top:18px;margin-bottom:0">A sessão fica salva neste aparelho depois do primeiro login. No iPhone, adicione o site à tela inicial (Compartilhar → Adicionar à Tela de Início) para o Safari não apagar a sessão após dias sem uso.</div>
     </div>
   </div>
 
@@ -432,7 +449,7 @@
         <div class="receipt-row"><span>Lucro recebido</span><strong id="mLucro" class="mono green">R$ 0,00</strong></div>
       </div>
       <div class="card stat-strip-card">
-        <div class="strip-head"><h3>Capital da operação</h3><button class="small ghost" onclick="openCapitalModal()">Editar</button></div>
+        <div class="strip-head"><h3>Capital da operação</h3><button class="small ghost" onclick="openCapitalModal()">Movimentar</button></div>
         <div class="stat-strip">
           <div class="stat"><span class="stat-label">Total</span><span id="mCapitalTotal" class="stat-value mono">R$ 0,00</span></div>
           <div class="stat"><span class="stat-label">Emprestado</span><span id="mCapitalEmprestado" class="stat-value mono yellow">R$ 0,00</span></div>
@@ -446,12 +463,12 @@
     <section id="operations" class="section">
       <div class="page-header"><div><h2>Carteira</h2><p class="page-sub">Saldo devedor = capital + juros fixo da operação.</p></div><button class="small" onclick="openLoanModal()">+ Operação</button></div>
       <div class="segmented"><button class="seg-btn active" data-seg="operations" onclick="showTab('operations')">Operações</button><button class="seg-btn" data-seg="people" onclick="showTab('people')">Pessoas</button></div>
-      <div class="toolbar"><div class="search">🔎 <input id="loanSearch" placeholder="Buscar por nome ou observação" oninput="renderLoans()"></div><select id="loanFilter" style="max-width:170px;width:auto" onchange="renderLoans()"><option value="all">Todas</option><option value="open">Abertas</option><option value="late">Com lucro a receber</option><option value="due">Vencem em até 7 dias</option><option value="closed">Quitadas</option></select></div>
+      <div class="toolbar"><div class="search">🔎 <input id="loanSearch" placeholder="Buscar por nome ou observação" oninput="renderLoans()"></div><select id="loanFilter" style="max-width:170px;width:auto" onchange="renderLoans()"><option value="all">Todas</option><option value="open">Abertas</option><option value="overdue">Atrasadas</option><option value="due">Vencem em até 7 dias</option><option value="closed">Quitadas</option></select></div>
       <div id="loansTable" class="card-list"></div>
     </section>
 
     <section id="people" class="section">
-      <div class="page-header"><div><h2>Carteira</h2><p class="page-sub">Saldo total e histórico por pessoa.</p></div><button class="small secondary" onclick="openPersonModal()">+ Pessoa</button></div>
+      <div class="page-header"><div><h2>Carteira</h2><p class="page-sub">Toque em uma pessoa para abrir a ficha completa.</p></div><button class="small secondary" onclick="openPersonModal()">+ Pessoa</button></div>
       <div class="segmented"><button class="seg-btn" data-seg="operations" onclick="showTab('operations')">Operações</button><button class="seg-btn active" data-seg="people" onclick="showTab('people')">Pessoas</button></div>
       <div id="peopleTable" class="card-list"></div>
     </section>
@@ -487,6 +504,7 @@
         <button class="ghost small filter-btn" data-history-filter="interest_paid" onclick="setHistoryFilter('interest_paid')">Juros pagos</button>
         <button class="ghost small filter-btn" data-history-filter="other_paid" onclick="setHistoryFilter('other_paid')">Outros</button>
         <button class="ghost small filter-btn" data-history-filter="principal_paid" onclick="setHistoryFilter('principal_paid')">Capital pago</button>
+        <button class="ghost small filter-btn" data-history-filter="capital" onclick="setHistoryFilter('capital')">Capital da operação</button>
         <button class="ghost small filter-btn" data-history-filter="edited" onclick="setHistoryFilter('edited')">Edições</button>
         <button class="ghost small filter-btn" data-history-filter="deleted" onclick="setHistoryFilter('deleted')">Exclusões</button>
         <button class="ghost small filter-btn" data-history-filter="expense" onclick="setHistoryFilter('expense')">Despesas</button>
@@ -509,6 +527,7 @@
       <div class="menu-list">
         <button class="menu-item" onclick="showTab('payments')"><div><div class="menu-title">Pagamentos</div><div class="menu-sub">Todos os recebimentos registrados</div></div><span class="chev">›</span></button>
         <button class="menu-item" onclick="showTab('history')"><div><div class="menu-title">Histórico</div><div class="menu-sub">Registro discreto de tudo que aconteceu</div></div><span class="chev">›</span></button>
+        <button class="menu-item" onclick="openCapitalModal()"><div><div class="menu-title">Capital da operação</div><div class="menu-sub">Aportes e retiradas de dinheiro</div></div><span class="chev">›</span></button>
         <button class="menu-item" onclick="showTab('settings')"><div><div class="menu-title">Dados e segurança</div><div class="menu-sub">Backup, importação e limpeza</div></div><span class="chev">›</span></button>
         <button class="menu-item" onclick="logoutAdmin()"><div><div class="menu-title" style="color:var(--red)">Sair da conta</div><div class="menu-sub">Encerra a sessão neste aparelho</div></div><span class="chev">›</span></button>
       </div>
@@ -531,7 +550,12 @@
 
   <div id="expenseModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="expenseModalTitle">Nova despesa</h2><p class="subtitle">Informe despesas da operação para calcular o resultado mensal.</p></div><button class="ghost small" onclick="closeModal('expenseModal')">✕</button></div><div class="modal-body"><div id="expenseLockNotice" class="notice locked-note" style="display:none">Esta despesa está protegida contra alteração acidental. Toque em <strong>Liberar edição</strong> para corrigir os dados.</div><form id="expenseForm" onsubmit="saveExpense(event)"><input type="hidden" id="expenseId"><div class="form-grid"><div><label>Data da despesa</label><input id="expenseDate" type="date" required></div><div><label>Valor</label><input id="expenseAmount" type="number" min="0" step="0.01" required placeholder="0,00"></div><div><label>Categoria</label><input id="expenseCategory" placeholder="Ex: transporte, cartório, taxa..."></div><div><label>Forma</label><input id="expenseMethod" placeholder="Pix, dinheiro, cartão..."></div><div class="full"><label>Descrição</label><textarea id="expenseDescription" placeholder="Ex: custo para cobrar, deslocamento, impressão, taxa bancária..."></textarea></div></div><div class="toolbar"><button id="expenseUnlockBtn" type="button" class="secondary" style="display:none" onclick="unlockForm('expense')">Liberar edição</button><div class="row-actions"><button id="expenseDeleteBtn" type="button" class="danger" style="display:none" onclick="deleteExpenseFromModal()">Excluir despesa</button><button id="expenseSaveBtn" type="submit">Salvar despesa</button></div></div></form></div></div></div>
 
-  <div id="capitalModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2>Capital da operação</h2><p class="subtitle">Informe o dinheiro total disponível para emprestar.</p></div><button class="ghost small" onclick="closeModal('capitalModal')">✕</button></div><div class="modal-body"><div class="notice">O capital livre é calculado automaticamente: capital total menos capital atualmente emprestado. Capital amortizado volta a ficar livre.</div><form id="capitalForm" onsubmit="saveCapitalConfig(event)"><div class="form-grid"><div class="full"><label>Capital total disponível</label><input id="capitalTotalInput" type="number" min="0" step="0.01" required placeholder="0,00"></div></div><div class="toolbar"><span></span><button type="submit">Salvar capital</button></div></form></div></div></div>
+  <div id="capitalModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2>Capital da operação</h2><p class="subtitle">Aportes e retiradas do dinheiro da operação.</p></div><button class="ghost small" onclick="closeModal('capitalModal')">✕</button></div><div class="modal-body">
+    <div class="card stat-strip-card" style="margin-bottom:16px"><div class="stat-strip"><div class="stat"><span class="stat-label">Capital total</span><span id="capModalTotal" class="stat-value mono">R$ 0,00</span></div><div class="stat"><span class="stat-label">Aportado</span><span id="capModalAportes" class="stat-value mono green">R$ 0,00</span></div><div class="stat"><span class="stat-label">Retirado</span><span id="capModalRetiradas" class="stat-value mono red">R$ 0,00</span></div></div></div>
+    <div class="notice">Capital total = aportes − retiradas. O capital livre no Resumo desconta o que está emprestado. Quando você tirar lucro da operação para uso pessoal, registre como <strong>retirada de lucro</strong> — assim dá pra saber quanto a operação já rendeu de verdade.</div>
+    <form id="capitalForm" onsubmit="saveCapitalMovement(event)"><div class="form-grid"><div><label>Tipo</label><select id="capMovType"><option value="aporte">Aporte (entrada de dinheiro)</option><option value="retirada_lucro">Retirada de lucro</option><option value="retirada_capital">Retirada de capital</option></select></div><div><label>Data</label><input id="capMovDate" type="date" required></div><div class="full"><label>Valor</label><input id="capMovAmount" type="number" min="0.01" step="0.01" required placeholder="0,00"></div><div class="full"><label>Observação</label><input id="capMovNotes" placeholder="Ex: reforço de caixa, retirada pro mês..."></div></div><div class="toolbar"><span></span><button type="submit">Registrar movimentação</button></div></form>
+    <div class="card" style="margin:18px 0 0"><h3>Movimentações</h3><div id="capMovList" class="mini-list"></div></div>
+  </div></div></div>
 
   <div id="detailModal" class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2 id="detailTitle">Operação</h2><p id="detailSub" class="subtitle"></p></div><button class="ghost small" onclick="closeModal('detailModal')">✕</button></div><div id="detailContent"></div></div></div>
 
@@ -539,6 +563,18 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script>
+    // Manifest PWA gerado em runtime (permite "Adicionar à tela inicial" como app)
+    (function(){
+      try {
+        var icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23081410'/%3E%3Crect x='31' y='31' width='38' height='38' rx='9' transform='rotate(45 50 50)' fill='%235FE3A1'/%3E%3Crect x='42' y='42' width='16' height='16' rx='3' transform='rotate(45 50 50)' fill='%23081410'/%3E%3C/svg%3E";
+        var manifest = { name: 'Carteira Clara', short_name: 'Carteira', display: 'standalone', background_color: '#081410', theme_color: '#081410', start_url: location.href, icons: [{ src: icon, sizes: 'any', type: 'image/svg+xml' }] };
+        var link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/json' }));
+        document.head.appendChild(link);
+      } catch (e) { /* opcional */ }
+    })();
+
     // Cole aqui o firebaseConfig do seu projeto Firebase.
     // A senha NÃO fica no HTML. O login usa Firebase Authentication.
     const firebaseConfig = {
@@ -552,14 +588,12 @@
     };
     const ADMIN_EMAIL = 'admin@carteiraclara.local';
     const ADMIN_UID = 'MwBQo1rcYnacu60jWbVUEyoI54q1';
-    let firebaseApp = null, auth = null, db = null, currentUser = null, cloudSaveTimer = null, cloudLoaded = false;
+    let firebaseApp = null, auth = null, db = null, currentUser = null, cloudSaveTimer = null, cloudLoaded = false, unsubscribeCloud = null;
 
-    const STORAGE_KEY = 'carteira_clara_v2';
-    const OLD_STORAGE_KEY = 'carteira_clara_v1';
     let state = defaultState();
     let historyFilter = 'all';
 
-    function defaultState() { return { people: [], loans: [], payments: [], expenses: [], history: [], config: { totalCapital: 0 } }; }
+    function defaultState() { return { people: [], loans: [], payments: [], expenses: [], history: [], capitalMovements: [], config: { totalCapital: 0 } }; }
     function normalizeState(data) {
       var base = defaultState();
       data = data || {};
@@ -569,8 +603,14 @@
       base.payments.forEach(function(p){ if (p.other === undefined) p.other = 0; });
       base.expenses = data.expenses || [];
       base.history = data.history || [];
+      base.capitalMovements = data.capitalMovements || [];
       base.config = data.config || { totalCapital: 0 };
       if (base.config.totalCapital === undefined) base.config.totalCapital = 0;
+      // Migração: capital antigo (número único) vira o primeiro aporte do livro de movimentações.
+      if (!base.config.capitalMigrated && !base.capitalMovements.length && Number(base.config.totalCapital) > 0) {
+        base.capitalMovements.push({ id: uid('cap'), date: todayISO(), type: 'aporte', amount: Number(base.config.totalCapital), notes: 'Saldo inicial (migrado do capital antigo)' });
+        base.config.capitalMigrated = true;
+      }
       return base;
     }
 
@@ -595,17 +635,9 @@
       return new Date(targetYear, targetMonth, day).toISOString().slice(0,10);
     }
     function isMonthly(loan) { return loan.periodDays === 'monthly' || loan.periodDays === 'month'; }
-    function dueDateAt(loan, index) { return isMonthly(loan) ? addMonths(loan.firstDue, index) : addDays(loan.firstDue, index * periodDays(loan)); }
+    function loanFirstDue(loan) { return loan.firstDue || (isMonthly(loan) ? addMonths(loan.date, 1) : addDays(loan.date, periodDays(loan))); }
+    function dueDateAt(loan, index) { var fd = loanFirstDue(loan); return isMonthly(loan) ? addMonths(fd, index) : addDays(fd, index * periodDays(loan)); }
     function periodLabel(loan) { return isMonthly(loan) ? 'mensal' : periodDays(loan) + ' dias'; }
-    function countPeriodsDue(loan, asOf) {
-      const firstDue = loan.firstDue;
-      if (!firstDue || asOf < firstDue) return 0;
-      if (!isMonthly(loan)) return Math.floor(daysBetween(firstDue, asOf) / periodDays(loan)) + 1;
-      let count = 0;
-      let current = firstDue;
-      while (current <= asOf && count < 600) { count++; current = addMonths(firstDue, count); }
-      return count;
-    }
     function clampMoney(v) { return Math.max(0, Math.round(Number(v || 0) * 100) / 100); }
     function escapeHtml(s) { return String(s || '').replace(/[&<>'"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]; }); }
 
@@ -619,34 +651,30 @@
       setCloudStatus('Salvando...');
       cloudSaveTimer = setTimeout(function(){
         carteiraDocRef().set({ state: state, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
-          .then(function(){ setCloudStatus('Salvo no Firebase'); })
+          .then(function(){ setCloudStatus('Sincronizado'); })
           .catch(function(err){ console.error(err); setCloudStatus('Erro ao salvar'); alert('Erro ao salvar no Firebase: ' + err.message); });
       }, 350);
     }
-    async function saveStateNow() {
-      if (!cloudLoaded || !currentUser || !db) return;
-      clearTimeout(cloudSaveTimer);
-      setCloudStatus('Salvando...');
-      try {
-        await carteiraDocRef().set({ state: state, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-        setCloudStatus('Salvo no Firebase');
-      } catch (err) {
-        console.error(err);
-        setCloudStatus('Erro ao salvar');
-        alert('Erro ao salvar no Firebase: ' + err.message);
-        throw err;
-      }
-    }
-    async function loadCloudState() {
+    // Sincronização em tempo real: qualquer alteração feita em outro aparelho
+    // chega aqui sozinha, sem precisar recarregar a página.
+    function startCloudSync() {
       cloudLoaded = false;
       setCloudStatus('Carregando...');
-      var snap = await carteiraDocRef().get();
-      state = snap.exists ? normalizeState((snap.data() || {}).state) : defaultState();
-      cloudLoaded = true;
-      refreshAll(false);
-      if (!snap.exists) saveState();
-      setCloudStatus('Salvo no Firebase');
+      if (unsubscribeCloud) { unsubscribeCloud(); unsubscribeCloud = null; }
+      unsubscribeCloud = carteiraDocRef().onSnapshot(function(snap){
+        if (snap.metadata.hasPendingWrites) return; // ignora o eco da própria escrita
+        var firstLoad = !cloudLoaded;
+        state = snap.exists ? normalizeState((snap.data() || {}).state) : defaultState();
+        cloudLoaded = true;
+        refreshAll(false);
+        if (!snap.exists && firstLoad) saveState();
+        setCloudStatus('Sincronizado');
+      }, function(err){
+        console.error(err);
+        setCloudStatus('Sem conexão');
+      });
     }
+    function stopCloudSync() { if (unsubscribeCloud) { unsubscribeCloud(); unsubscribeCloud = null; } cloudLoaded = false; }
 
     function addHistory(type, title, amount, details) {
       state.history.unshift({ id: uid('hist'), type: type, dateTime: new Date().toISOString(), when: nowBR(), title: title, amount: Number(amount || 0), details: details || '' });
@@ -673,6 +701,17 @@
     function periodDays(loan) { return loan.periodDays === 'custom' ? Number(loan.customDays || 1) : Number(loan.periodDays || 30); }
     function personNameByLoan(loanId) { var l = getLoan(loanId); var p = l ? getPerson(l.personId) : null; return p ? p.name : 'Pessoa removida'; }
 
+    // ── Capital da operação (livro de movimentações) ──
+    function capitalTotals() {
+      var aportes = 0, retiradas = 0, retiradaLucro = 0;
+      (state.capitalMovements || []).forEach(function(m){
+        var v = Number(m.amount || 0);
+        if (m.type === 'aporte') aportes += v;
+        else { retiradas += v; if (m.type === 'retirada_lucro') retiradaLucro += v; }
+      });
+      return { aportes: aportes, retiradas: retiradas, retiradaLucro: retiradaLucro, total: aportes - retiradas };
+    }
+
     function calcLoan(loan, asOf) {
       asOf = asOf || todayISO();
       const payments = loanPayments(loan.id);
@@ -680,25 +719,27 @@
       const paidPrincipal = payments.reduce((s,p) => s + Number(p.principal || 0), 0);
       const paidOther = payments.reduce((s,p) => s + Number(p.other || 0), 0);
       const principal = clampMoney(Number(loan.amount || 0) - paidPrincipal);
-      const firstDue = loan.firstDue || (isMonthly(loan) ? addMonths(loan.date, 1) : addDays(loan.date, periodDays(loan)));
-      loan.firstDue = firstDue;
-      let periodsDue = 0;
-      if (loan.status !== 'closed') periodsDue = countPeriodsDue(loan, asOf);
-      const interestBase = Number(loan.amount || 0);
-      // Juros fixo unico: saldo devedor nasce como capital + taxa (ex: 1000 a 10% = 1100).
-      const interestPerPeriod = clampMoney(interestBase * (Number(loan.rate || 0) / 100));
-      const interestAccrued = interestPerPeriod;
-      const unpaidInterest = clampMoney(interestAccrued - paidInterest);
+      const firstDue = loanFirstDue(loan);
+      // Juros fixo único: saldo devedor nasce como capital + taxa (ex: 1000 a 10% = 1100).
+      const interestPerPeriod = clampMoney(Number(loan.amount || 0) * (Number(loan.rate || 0) / 100));
+      const unpaidInterest = clampMoney(interestPerPeriod - paidInterest);
       const balance = loan.status === 'closed' ? 0 : clampMoney(principal + unpaidInterest);
-      let nextDue = isMonthly(loan) ? addMonths(firstDue, periodsDue) : addDays(firstDue, periodsDue * periodDays(loan));
-      const overduePeriods = 0;
-      return { paidInterest, paidPrincipal, paidOther, principal, periodsDue, interestBase, interestPerPeriod, interestAccrued, unpaidInterest, balance, nextDue, overduePeriods };
+      // Vencimento: é o primeiro vencimento depois do último pagamento.
+      // Sem pagamento, fica parado no primeiro vencimento — assim o atraso aparece de verdade.
+      const lastPaymentDate = payments.length ? payments[payments.length - 1].date : null;
+      let nextDue = firstDue;
+      if (lastPaymentDate) {
+        let i = 0;
+        while (nextDue <= lastPaymentDate && i < 600) { i++; nextDue = dueDateAt(loan, i); }
+      }
+      const daysLate = (loan.status !== 'closed' && loan.status !== 'paused' && balance > 0.01 && asOf > nextDue) ? daysBetween(nextDue, asOf) : 0;
+      return { paidInterest, paidPrincipal, paidOther, principal, interestPerPeriod, unpaidInterest, balance, nextDue, daysLate };
     }
 
     function portfolio() {
       return state.loans.reduce((acc, loan) => {
         const c = calcLoan(loan);
-        if (loan.status !== 'closed') { acc.balance += c.balance; acc.principal += c.principal; acc.unpaidInterest += c.unpaidInterest; if (c.unpaidInterest > 0) acc.late += 1; }
+        if (loan.status !== 'closed') { acc.balance += c.balance; acc.principal += c.principal; acc.unpaidInterest += c.unpaidInterest; if (c.daysLate > 0) acc.late += 1; }
         acc.profit += c.paidInterest;
         acc.recovered += c.paidPrincipal;
         acc.other += c.paidOther;
@@ -718,7 +759,7 @@
       refreshAll(false);
     }
 
-    function refreshAll(save) { renderPersonOptions(); renderDashboard(); renderLoans(); renderPeople(); renderPayments(); renderPaymentOptions(); renderMonthlyResult(); renderHistory(); if (save !== false) saveState(); }
+    function refreshAll(save) { renderPersonOptions(); renderDashboard(); renderLoans(); renderPeople(); renderPayments(); renderPaymentOptions(); renderMonthlyResult(); renderHistory(); renderCapitalModal(); if (save !== false) saveState(); }
 
     function setFormLocked(prefix, locked) {
       var form = document.getElementById(prefix + 'Form');
@@ -736,11 +777,15 @@
 
     function renderDashboard() {
       var p = portfolio();
+      var cap = capitalTotals();
       mSaldo.textContent = money(p.balance); mCapital.textContent = money(p.principal); mJurosVencidos.textContent = money(p.unpaidInterest); mLucro.textContent = money(p.profit);
       if (document.getElementById('receiptDate')) receiptDate.textContent = new Date().toLocaleDateString('pt-BR');
-      if (document.getElementById('mCapitalTotal')) { var totalCap = Number((state.config || {}).totalCapital || 0); mCapitalTotal.textContent = money(totalCap); mCapitalEmprestado.textContent = money(p.principal); mCapitalLivre.textContent = money(totalCap - p.principal); mCapitalLivre.className = 'stat-value mono ' + (totalCap - p.principal < 0 ? 'red' : 'green'); }
-      var actives = state.loans.filter(l => l.status !== 'closed').map(l => ({loan:l, c:calcLoan(l), person:getPerson(l.personId)})).sort((a,b) => b.c.balance - a.c.balance);
-      alertList.innerHTML = actives.length ? actives.map(function(x){ return '<div class="mini-item"><div class="mini-info"><div class="mini-title">' + escapeHtml(x.person ? x.person.name : 'Sem nome') + '</div><div class="mini-sub">Saldo ' + money(x.c.balance) + ' · vence ' + formatDate(x.c.nextDue) + '</div></div><div class="mini-right"><button class="small" onclick="openPaymentModal(null,\'' + x.loan.id + '\')">Receber</button></div></div>'; }).join('') : '<div class="empty">Nenhuma operação ativa. Toque no botão verde para começar.</div>';
+      if (document.getElementById('mCapitalTotal')) { mCapitalTotal.textContent = money(cap.total); mCapitalEmprestado.textContent = money(p.principal); mCapitalLivre.textContent = money(cap.total - p.principal); mCapitalLivre.className = 'stat-value mono ' + (cap.total - p.principal < 0 ? 'red' : 'green'); }
+      var actives = state.loans.filter(l => l.status !== 'closed').map(l => ({loan:l, c:calcLoan(l), person:getPerson(l.personId)})).sort(function(a,b){ return (b.c.daysLate - a.c.daysLate) || (b.c.balance - a.c.balance); });
+      alertList.innerHTML = actives.length ? actives.map(function(x){
+        var atraso = x.c.daysLate > 0 ? ' · <span class="red">atrasada há ' + x.c.daysLate + (x.c.daysLate === 1 ? ' dia' : ' dias') + '</span>' : ' · vence ' + formatDate(x.c.nextDue);
+        return '<div class="mini-item"><div class="mini-info"><div class="mini-title">' + escapeHtml(x.person ? x.person.name : 'Sem nome') + '</div><div class="mini-sub">Saldo ' + money(x.c.balance) + atraso + '</div></div><div class="mini-right"><button class="small" onclick="openPaymentModal(null,\'' + x.loan.id + '\')">Receber</button></div></div>';
+      }).join('') : '<div class="empty">Nenhuma operação ativa. Toque no botão verde para começar.</div>';
       var due = state.loans.filter(l => l.status !== 'closed').map(l => { var c=calcLoan(l); return {loan:l, c:c, person:getPerson(l.personId), days:daysBetween(todayISO(), c.nextDue)}; }).filter(x => x.days >= 0 && x.days <= 10).sort((a,b) => a.days - b.days).slice(0,6);
       dueList.innerHTML = due.length ? due.map(function(x){ return '<div class="mini-item"><div class="mini-info"><div class="mini-title">' + escapeHtml(x.person ? x.person.name : 'Sem nome') + '</div><div class="mini-sub">' + 'Saldo ' + money(x.c.balance) + ' · vence ' + formatDate(x.c.nextDue) + '</div></div><div class="mini-right"><span class="status neutral">' + (x.days === 0 ? 'Hoje' : x.days + ' dias') + '</span></div></div>'; }).join('') : '<div class="empty">Nenhum vencimento nos próximos 10 dias.</div>';
     }
@@ -749,6 +794,7 @@
       if (loan.status === 'closed') return '<span class="status ok">Quitada</span>';
       if (loan.status === 'paused') return '<span class="status neutral">Pausada</span>';
       if (loan.status === 'renegotiated') return '<span class="status neutral">Renegociada</span>';
+      if (c.daysLate > 0) return '<span class="status bad">Atrasada há ' + c.daysLate + (c.daysLate === 1 ? ' dia' : ' dias') + '</span>';
       var d = daysBetween(todayISO(), c.nextDue);
       if (d <= 2) return '<span class="status warn">Vence logo</span>';
       return '<span class="status ok">Em dia</span>';
@@ -757,12 +803,14 @@
     function renderLoans() {
       var q = (loanSearch ? loanSearch.value : '').toLowerCase(); var f = loanFilter ? loanFilter.value : 'all';
       var rows = state.loans.map(l => ({ loan:l, c:calcLoan(l), person:getPerson(l.personId) }));
-      rows = rows.filter(function(x) { var hay = ((x.person ? x.person.name : '') + ' ' + (x.loan.notes || '')).toLowerCase(); if (q && hay.indexOf(q) < 0) return false; if (f === 'open' && x.loan.status === 'closed') return false; if (f === 'closed' && x.loan.status !== 'closed') return false; if (f === 'late' && x.c.unpaidInterest <= 0) return false; if (f === 'due') { var d = daysBetween(todayISO(), x.c.nextDue); if (!(d >= 0 && d <= 7)) return false; } return true; });
+      rows = rows.filter(function(x) { var hay = ((x.person ? x.person.name : '') + ' ' + (x.loan.notes || '')).toLowerCase(); if (q && hay.indexOf(q) < 0) return false; if (f === 'open' && x.loan.status === 'closed') return false; if (f === 'closed' && x.loan.status !== 'closed') return false; if (f === 'overdue' && !(x.c.daysLate > 0)) return false; if (f === 'due') { var d = daysBetween(todayISO(), x.c.nextDue); if (x.loan.status === 'closed' || !(d >= 0 && d <= 7)) return false; } return true; });
+      rows.sort(function(a,b){ return (b.c.daysLate - a.c.daysLate) || (b.c.balance - a.c.balance); });
       if (!rows.length) { loansTable.innerHTML = '<div class="empty">Nenhuma operação encontrada.</div>'; return; }
       loansTable.innerHTML = rows.map(function(x){
         var name = escapeHtml(x.person ? x.person.name : 'Pessoa removida');
+        var dueText = x.c.daysLate > 0 ? 'venceu ' + formatDate(x.c.nextDue) : 'vence ' + formatDate(x.c.nextDue);
         return '<article class="item-card">' +
-          '<div class="item-top"><div class="item-info"><div class="item-name">' + name + '</div><div class="item-sub">' + Number(x.loan.rate) + '% / ' + periodLabel(x.loan) + ' · início ' + formatDate(x.loan.date) + ' · vence ' + formatDate(x.c.nextDue) + '</div></div><div class="item-amount"><strong class="mono">' + money(x.c.balance) + '</strong><span>saldo hoje</span></div></div>' +
+          '<div class="item-top"><div class="item-info"><div class="item-name">' + name + '</div><div class="item-sub">' + Number(x.loan.rate) + '% / ' + periodLabel(x.loan) + ' · início ' + formatDate(x.loan.date) + ' · ' + dueText + '</div></div><div class="item-amount"><strong class="mono">' + money(x.c.balance) + '</strong><span>saldo hoje</span></div></div>' +
           '<div class="item-meta">' + loanStatusLabel(x.loan, x.c) + '<span class="chip yellow-chip">Lucro a receber ' + money(x.c.unpaidInterest) + '</span><span class="chip green-chip">Lucro recebido ' + money(x.c.paidInterest) + '</span><span class="chip">Capital ' + money(x.c.principal) + ' de ' + money(x.loan.amount) + '</span></div>' +
           '<div class="item-actions"><button class="small" onclick="openPaymentModal(null,\'' + x.loan.id + '\')">Receber</button><button class="small secondary" onclick="openDetail(\'' + x.loan.id + '\')">Extrato</button><button class="small ghost" onclick="openLoanModal(\'' + x.loan.id + '\')">Editar</button></div></article>';
       }).join('');
@@ -773,16 +821,39 @@
       peopleTable.innerHTML = state.people.map(function(p) {
         var personLoans = state.loans.filter(l => l.personId === p.id);
         var openLoans = personLoans.filter(l => l.status !== 'closed');
-        var initialOpen = openLoans.reduce((s,l) => s + Number(l.amount || 0), 0);
-        var openBalance = openLoans.reduce((s,l) => s + calcLoan(l).balance, 0);
+        var openBalance = 0, maxLate = 0;
+        openLoans.forEach(function(l){ var c = calcLoan(l); openBalance += c.balance; if (c.daysLate > maxLate) maxLate = c.daysLate; });
         var interestPaid = personLoans.reduce((s,l) => s + calcLoan(l).paidInterest, 0);
         var totalBorrowed = personLoans.reduce((s,l) => s + Number(l.amount || 0), 0);
-        var closedBorrowed = personLoans.filter(l => l.status === 'closed').reduce((s,l) => s + Number(l.amount || 0), 0);
-        return '<article class="item-card">' +
-          '<div class="item-top"><div class="item-info"><div class="item-name">' + escapeHtml(p.name) + '</div><div class="item-sub">' + escapeHtml(p.relation || '—') + ' · ' + openLoans.length + ' aberta(s) · inicial ' + money(initialOpen) + (p.notes ? ' · ' + escapeHtml(p.notes) : '') + '</div></div><div class="item-amount"><strong class="mono">' + money(openBalance) + '</strong><span>saldo atual</span></div></div>' +
-          '<div class="item-meta"><span class="status neutral">' + escapeHtml(p.status || 'Ativo') + '</span><span class="chip green-chip">Lucro recebido ' + money(interestPaid) + '</span><span class="chip">Quitado ' + money(closedBorrowed) + '</span><span class="chip">Já pegou ' + money(totalBorrowed) + '</span></div>' +
-          '<div class="item-actions"><button class="small secondary" onclick="openLoanModal(null, \'' + p.id + '\')">Nova operação</button><button class="small ghost" onclick="openPersonModal(\'' + p.id + '\')">Ver / Editar</button></div></article>';
+        var lateChip = maxLate > 0 ? '<span class="chip red-chip">Atraso de ' + maxLate + (maxLate === 1 ? ' dia' : ' dias') + '</span>' : '';
+        return '<article class="item-card press" onclick="openPersonDetail(\'' + p.id + '\')">' +
+          '<div class="item-top"><div class="item-info"><div class="item-name">' + escapeHtml(p.name) + '</div><div class="item-sub">' + escapeHtml(p.relation || '—') + ' · ' + openLoans.length + ' operação(ões) aberta(s)' + (p.notes ? ' · ' + escapeHtml(p.notes) : '') + '</div></div><div class="item-amount"><strong class="mono">' + money(openBalance) + '</strong><span>saldo atual</span></div></div>' +
+          '<div class="item-meta"><span class="status neutral">' + escapeHtml(p.status || 'Ativo') + '</span>' + lateChip + '<span class="chip green-chip">Lucro recebido ' + money(interestPaid) + '</span><span class="chip">Já pegou ' + money(totalBorrowed) + '</span></div>' +
+          '<div class="item-actions"><button class="small secondary" onclick="event.stopPropagation();openLoanModal(null, \'' + p.id + '\')">Nova operação</button><button class="small ghost" onclick="event.stopPropagation();openPersonDetail(\'' + p.id + '\')">Abrir ficha</button></div></article>';
       }).join('');
+    }
+
+    // ── Ficha da pessoa ──
+    function openPersonDetail(personId) {
+      var p = getPerson(personId);
+      if (!p) return;
+      var personLoans = state.loans.filter(l => l.personId === personId).map(l => ({ loan: l, c: calcLoan(l) }));
+      personLoans.sort(function(a,b){ if ((a.loan.status === 'closed') !== (b.loan.status === 'closed')) return a.loan.status === 'closed' ? 1 : -1; return (b.c.daysLate - a.c.daysLate) || (b.c.balance - a.c.balance); });
+      var openBalance = 0, interestPaid = 0, openPrincipal = 0, totalBorrowed = 0;
+      personLoans.forEach(function(x){ if (x.loan.status !== 'closed') { openBalance += x.c.balance; openPrincipal += x.c.principal; } interestPaid += x.c.paidInterest; totalBorrowed += Number(x.loan.amount || 0); });
+      detailTitle.textContent = p.name;
+      detailSub.textContent = (p.relation || 'Sem relação informada') + (p.phone ? ' · ' + p.phone : '') + ' · ' + (p.status || 'Ativo');
+      var loansHtml = personLoans.length ? personLoans.map(function(x){
+        var statusHtml = loanStatusLabel(x.loan, x.c);
+        var sub = Number(x.loan.rate) + '% / ' + periodLabel(x.loan) + ' · início ' + formatDate(x.loan.date) + (x.loan.status === 'closed' ? '' : ' · vence ' + formatDate(x.c.nextDue));
+        return '<div class="mini-item press" onclick="openDetail(\'' + x.loan.id + '\')"><div class="mini-info"><div class="mini-title">' + money(x.loan.amount) + ' emprestado</div><div class="mini-sub">' + sub + '</div></div><div class="mini-right"><strong class="mono">' + money(x.c.balance) + '</strong>' + statusHtml + '</div></div>';
+      }).join('') : '<div class="empty">Nenhuma operação com esta pessoa ainda.</div>';
+      detailContent.innerHTML =
+        '<div class="card stat-strip-card" style="margin-bottom:14px"><div class="stat-strip" style="grid-template-columns:1fr 1fr"><div class="stat"><span class="stat-label">Saldo atual</span><span class="stat-value mono" style="font-size:18px">' + money(openBalance) + '</span></div><div class="stat"><span class="stat-label">Capital em aberto</span><span class="stat-value mono" style="font-size:18px">' + money(openPrincipal) + '</span></div><div class="stat"><span class="stat-label">Lucro recebido</span><span class="stat-value mono green">' + money(interestPaid) + '</span></div><div class="stat"><span class="stat-label">Já pegou no total</span><span class="stat-value mono">' + money(totalBorrowed) + '</span></div></div></div>' +
+        (p.notes ? '<div class="notice">' + escapeHtml(p.notes) + '</div>' : '') +
+        '<div style="display:flex;gap:8px;margin-bottom:14px"><button style="flex:1;justify-content:center;height:48px" onclick="closeModal(\'detailModal\');openLoanModal(null,\'' + personId + '\')">Nova operação</button><button class="secondary" style="flex:1;justify-content:center;height:48px" onclick="closeModal(\'detailModal\');openPersonModal(\'' + personId + '\')">Editar cadastro</button></div>' +
+        '<div class="card" style="margin-bottom:0"><h3>Operações</h3><div class="mini-list">' + loansHtml + '</div></div>';
+      showModal('detailModal');
     }
 
     function renderPayments() {
@@ -892,6 +963,7 @@
         if (historyFilter === 'edited') rows = rows.filter(h => h.type.indexOf('edited') >= 0);
         else if (historyFilter === 'deleted') rows = rows.filter(h => h.type.indexOf('deleted') >= 0);
         else if (historyFilter === 'expense') rows = rows.filter(h => h.type.indexOf('expense_') === 0);
+        else if (historyFilter === 'capital') rows = rows.filter(h => h.type.indexOf('capital_') === 0);
         else rows = rows.filter(h => h.type === historyFilter);
       }
       if (q) rows = rows.filter(h => ((h.when || '') + ' ' + (h.title || '') + ' ' + (h.details || '')).toLowerCase().indexOf(q) >= 0);
@@ -901,7 +973,7 @@
       }).join('');
     }
     function historyBadge(type) {
-      var map = { loan_created:['neutral','Empréstimo'], interest_paid:['ok','Juros pago'], principal_paid:['ok','Capital pago'], other_paid:['ok','Outros'], person_created:['neutral','Pessoa'], person_edited:['warn','Edição'], loan_edited:['warn','Edição'], payment_edited:['warn','Edição'], payment_deleted:['bad','Exclusão'], expense_created:['bad','Despesa'], expense_edited:['warn','Despesa editada'], expense_deleted:['bad','Despesa excluída'], data_imported:['neutral','Importação'], data_exported:['neutral','Exportação'], sample_loaded:['neutral','Exemplo'], data_wiped:['bad','Limpeza'], capital_edited:['warn','Capital'] };
+      var map = { loan_created:['neutral','Empréstimo'], interest_paid:['ok','Juros pago'], principal_paid:['ok','Capital pago'], other_paid:['ok','Outros'], person_created:['neutral','Pessoa'], person_edited:['warn','Edição'], loan_edited:['warn','Edição'], payment_edited:['warn','Edição'], payment_deleted:['bad','Exclusão'], expense_created:['bad','Despesa'], expense_edited:['warn','Despesa editada'], expense_deleted:['bad','Despesa excluída'], data_imported:['neutral','Importação'], data_exported:['neutral','Exportação'], sample_loaded:['neutral','Exemplo'], data_wiped:['bad','Limpeza'], capital_edited:['warn','Capital'], capital_aporte:['ok','Aporte'], capital_retirada_lucro:['warn','Retirada de lucro'], capital_retirada_capital:['warn','Retirada de capital'], capital_deleted:['bad','Mov. excluída'] };
       var m = map[type] || ['neutral', type || 'Registro']; return '<span class="status ' + m[0] + '">' + m[1] + '</span>';
     }
     function setHistoryFilter(filter) { historyFilter = filter; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.querySelector('[data-history-filter="' + filter + '"]').classList.add('active'); renderHistory(); }
@@ -1000,8 +1072,10 @@
       var l=getLoan(id), p=getPerson(l.personId), c=calcLoan(l), pays=loanPayments(id);
       detailTitle.textContent = p ? p.name : 'Operação';
       detailSub.textContent = Number(l.rate) + '% / ' + periodLabel(l) + ' · início em ' + formatDate(l.date);
-      detailContent.innerHTML =
+      var backBtn = p ? '<button class="back-btn" style="margin-bottom:10px" onclick="openPersonDetail(\'' + p.id + '\')">‹ Ficha de ' + escapeHtml(p.name) + '</button>' : '';
+      detailContent.innerHTML = backBtn +
         '<div class="card stat-strip-card" style="margin-bottom:14px"><div class="stat-strip" style="grid-template-columns:1fr 1fr"><div class="stat"><span class="stat-label">Saldo hoje</span><span class="stat-value mono" style="font-size:18px">' + money(c.balance) + '</span></div><div class="stat"><span class="stat-label">Saldo inicial</span><span class="stat-value mono" style="font-size:18px">' + money(l.amount) + '</span></div><div class="stat"><span class="stat-label">Lucro a receber</span><span class="stat-value mono yellow">' + money(c.unpaidInterest) + '</span></div><div class="stat"><span class="stat-label">Lucro recebido</span><span class="stat-value mono green">' + money(c.paidInterest) + '</span></div><div class="stat"><span class="stat-label">Outros recebidos</span><span class="stat-value mono green">' + money(c.paidOther) + '</span></div><div class="stat"><span class="stat-label">Capital em aberto</span><span class="stat-value mono">' + money(c.principal) + '</span></div></div></div>' +
+        (c.daysLate > 0 ? '<div class="notice" style="border-left-color:var(--red);background:var(--red-dim)">Vencimento em ' + formatDate(c.nextDue) + ' · atrasada há ' + c.daysLate + (c.daysLate === 1 ? ' dia' : ' dias') + ' sem pagamento.</div>' : '') +
         '<button style="width:100%;justify-content:center;height:48px;margin-bottom:14px" onclick="closeModal(\'detailModal\');openPaymentModal(null,\'' + id + '\')">Registrar pagamento</button>' +
         '<div class="card" style="margin-bottom:0"><h3>Extrato</h3>' + renderStatement(l,c,pays) + '</div>';
       showModal('detailModal');
@@ -1014,39 +1088,69 @@
       return '<div class="statement">' + rows.map(function(r){ return '<div class="st-item"><div class="st-info"><div class="st-event">' + r.event + '</div><div class="st-sub">' + formatDate(r.date) + ' · ' + r.note + '</div></div><div class="st-right"><strong class="mono' + (r.event === 'Pagamento recebido' ? ' green' : '') + '">' + r.value + '</strong>' + (r.action || '') + '</div></div>'; }).join('') + '</div>';
     }
 
-    function openCapitalModal() { capitalTotalInput.value = Number((state.config || {}).totalCapital || 0) || ''; showModal('capitalModal'); }
-    async function saveCapitalConfig(e) {
+    // ── Modal de capital: movimentações ──
+    var CAP_TYPE_LABEL = { aporte: 'Aporte', retirada_lucro: 'Retirada de lucro', retirada_capital: 'Retirada de capital' };
+    function openCapitalModal() {
+      capMovDate.value = todayISO();
+      capMovAmount.value = '';
+      capMovNotes.value = '';
+      capMovType.value = 'aporte';
+      renderCapitalModal();
+      showModal('capitalModal');
+    }
+    function renderCapitalModal() {
+      if (!document.getElementById('capMovList')) return;
+      var cap = capitalTotals();
+      capModalTotal.textContent = money(cap.total);
+      capModalAportes.textContent = money(cap.aportes);
+      capModalRetiradas.textContent = money(cap.retiradas);
+      var movs = (state.capitalMovements || []).slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); });
+      capMovList.innerHTML = movs.length ? movs.map(function(m){
+        var isIn = m.type === 'aporte';
+        return '<div class="mini-item"><div class="mini-info"><div class="mini-title">' + (CAP_TYPE_LABEL[m.type] || 'Movimentação') + '</div><div class="mini-sub">' + formatDate(m.date) + (m.notes ? ' · ' + escapeHtml(m.notes) : '') + '</div></div><div class="mini-right"><strong class="mono ' + (isIn ? 'green' : 'red') + '">' + (isIn ? '+' : '−') + money(m.amount) + '</strong><button class="small ghost" onclick="deleteCapitalMovement(\'' + m.id + '\')">Excluir</button></div></div>';
+      }).join('') : '<div class="empty">Nenhuma movimentação. Registre o primeiro aporte acima.</div>';
+    }
+    function saveCapitalMovement(e) {
       e.preventDefault();
-      var old = Number((state.config || {}).totalCapital || 0);
-      state.config = state.config || {};
-      state.config.totalCapital = Number(capitalTotalInput.value || 0);
-      addHistory('capital_edited', 'Capital total da operação atualizado', state.config.totalCapital, 'Antes: ' + money(old) + ' · Agora: ' + money(state.config.totalCapital));
-      try {
-        renderDashboard();
-        renderHistory();
-        await saveStateNow();
-        closeModal('capitalModal');
-        refreshAll(false);
-      } catch (err) {
-        state.config.totalCapital = old;
-        renderDashboard();
-        renderHistory();
-      }
+      var amount = Number(capMovAmount.value || 0);
+      if (amount <= 0) { alert('Informe um valor maior que zero.'); return; }
+      var mov = { id: uid('cap'), date: capMovDate.value || todayISO(), type: capMovType.value, amount: amount, notes: capMovNotes.value.trim() };
+      state.capitalMovements = state.capitalMovements || [];
+      state.capitalMovements.push(mov);
+      addHistory('capital_' + mov.type, CAP_TYPE_LABEL[mov.type] + ' no capital da operação', amount, formatDate(mov.date) + (mov.notes ? ' · ' + mov.notes : '') + ' · Capital total agora: ' + money(capitalTotals().total));
+      capMovAmount.value = '';
+      capMovNotes.value = '';
+      refreshAll();
+    }
+    function deleteCapitalMovement(id) {
+      var m = (state.capitalMovements || []).find(function(x){ return x.id === id; });
+      if (!m) return;
+      if (!confirm('Excluir esta movimentação de ' + money(m.amount) + '?')) return;
+      state.capitalMovements = state.capitalMovements.filter(function(x){ return x.id !== id; });
+      addHistory('capital_deleted', 'Movimentação de capital excluída', m.amount, (CAP_TYPE_LABEL[m.type] || m.type) + ' de ' + formatDate(m.date));
+      refreshAll();
     }
 
     function showModal(id) { document.getElementById(id).classList.add('show'); document.body.classList.add('modal-open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('show'); if (!document.querySelector('.modal-backdrop.show')) document.body.classList.remove('modal-open'); }
     function exportData() { addHistory('data_exported', 'Backup exportado', 0, 'Arquivo JSON gerado.'); saveState(); var blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup-carteira-clara.json'; a.click(); URL.revokeObjectURL(a.href); }
-    function importData(event) { var file=event.target.files[0]; if(!file) return; var reader=new FileReader(); reader.onload=function(){ try { var data=JSON.parse(reader.result); if(!data.people || !data.loans || !data.payments) throw new Error(); state=data; state.expenses = state.expenses || []; state.history = state.history || []; addHistory('data_imported', 'Backup importado', 0, 'Arquivo importado com sucesso.'); refreshAll(); alert('Backup importado com sucesso.'); } catch(e) { alert('Arquivo inválido.'); } }; reader.readAsText(file); }
+    function importData(event) { var file=event.target.files[0]; if(!file) return; var reader=new FileReader(); reader.onload=function(){ try { var data=JSON.parse(reader.result); if(!data.people || !data.loans || !data.payments) throw new Error(); state=normalizeState(data); addHistory('data_imported', 'Backup importado', 0, 'Arquivo importado com sucesso.'); refreshAll(); alert('Backup importado com sucesso.'); } catch(e) { alert('Arquivo inválido.'); } }; reader.readAsText(file); }
     function wipeData() { if(confirm('Tem certeza que deseja apagar todos os dados?')) { state=defaultState(); addHistory('data_wiped', 'Dados apagados', 0, 'Base local zerada.'); refreshAll(); } }
-    function loadSampleData() { state={ people:[{id:'p1',name:'João Silva',phone:'',relation:'Primo',status:'Ativo',notes:'Costuma pagar juros atrasado.'},{id:'p2',name:'Maria Costa',phone:'',relation:'Vizinha',status:'Ativo',notes:''}], loans:[{id:'l1',personId:'p1',date:addDays(todayISO(),-25),amount:1000,rate:10,periodDays:'10',customDays:'',firstDue:addDays(todayISO(),-15),status:'open',notes:'10% de 10 em 10 dias.'},{id:'l2',personId:'p2',date:addDays(todayISO(),-20),amount:1500,rate:5,periodDays:'monthly',customDays:'',firstDue:addDays(todayISO(),10),status:'open',notes:'5% mensal.'}], payments:[{id:'pay1',loanId:'l1',date:addDays(todayISO(),-12),interest:100,principal:0,other:15,notes:'Pagou primeiro período + mora.'}], expenses:[{id:'exp1',date:todayISO(),amount:18.50,category:'Transporte',method:'Pix',description:'Despesa de exemplo'}], history:[], config:{ totalCapital: 5000 } }; addHistory('sample_loaded', 'Dados de exemplo carregados', 0, 'Base de teste criada.'); addHistory('loan_created', 'Valor emprestado para João Silva', 1000, '10% a cada 10 dias'); addHistory('loan_created', 'Valor emprestado para Maria Costa', 1500, '5% mensal'); addHistory('interest_paid', 'Juros pago por João Silva', 100, 'Pagamento de exemplo'); addHistory('other_paid', 'Outros recebimentos de João Silva', 15, 'Mora de exemplo'); addHistory('expense_created', 'Despesa registrada', 18.50, 'Transporte · exemplo'); refreshAll(); }
+    function loadSampleData() { state={ people:[{id:'p1',name:'João Silva',phone:'',relation:'Primo',status:'Ativo',notes:'Costuma pagar juros atrasado.'},{id:'p2',name:'Maria Costa',phone:'',relation:'Vizinha',status:'Ativo',notes:''}], loans:[{id:'l1',personId:'p1',date:addDays(todayISO(),-25),amount:1000,rate:10,periodDays:'10',customDays:'',firstDue:addDays(todayISO(),-15),status:'open',notes:'10% de 10 em 10 dias.'},{id:'l2',personId:'p2',date:addDays(todayISO(),-20),amount:1500,rate:5,periodDays:'monthly',customDays:'',firstDue:addDays(todayISO(),10),status:'open',notes:'5% mensal.'}], payments:[{id:'pay1',loanId:'l1',date:addDays(todayISO(),-12),interest:100,principal:0,other:15,notes:'Pagou primeiro período + mora.'}], expenses:[{id:'exp1',date:todayISO(),amount:18.50,category:'Transporte',method:'Pix',description:'Despesa de exemplo'}], history:[], capitalMovements:[{id:'cap1',date:addDays(todayISO(),-30),type:'aporte',amount:5000,notes:'Aporte de exemplo'}], config:{ totalCapital: 0, capitalMigrated: true } }; addHistory('sample_loaded', 'Dados de exemplo carregados', 0, 'Base de teste criada.'); addHistory('loan_created', 'Valor emprestado para João Silva', 1000, '10% a cada 10 dias'); addHistory('loan_created', 'Valor emprestado para Maria Costa', 1500, '5% mensal'); addHistory('interest_paid', 'Juros pago por João Silva', 100, 'Pagamento de exemplo'); addHistory('other_paid', 'Outros recebimentos de João Silva', 15, 'Mora de exemplo'); addHistory('expense_created', 'Despesa registrada', 18.50, 'Transporte · exemplo'); refreshAll(); }
 
     function isFirebaseConfigured() {
       return firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== 'COLE_AQUI' && firebaseConfig.projectId && firebaseConfig.projectId !== 'COLE_AQUI';
     }
+    function showLoginScreen(message) {
+      bootScreen.classList.add('app-hidden');
+      mainApp.classList.add('app-hidden');
+      bottomNav.classList.add('app-hidden');
+      loginScreen.classList.remove('app-hidden');
+      if (message) loginStatus.textContent = message;
+    }
     function initFirebase() {
       if (!isFirebaseConfigured()) {
-        loginStatus.textContent = 'Antes de entrar, cole o firebaseConfig do seu projeto no código.';
+        showLoginScreen('Antes de entrar, cole o firebaseConfig do seu projeto no código.');
         return;
       }
       try {
@@ -1058,24 +1162,23 @@
           if (user) {
             if (user.uid !== ADMIN_UID) {
               await auth.signOut();
-              loginStatus.textContent = 'Usuário não autorizado para esta carteira.';
+              showLoginScreen('Usuário não autorizado para esta carteira.');
               return;
             }
             currentUser = user;
+            bootScreen.classList.add('app-hidden');
             loginScreen.classList.add('app-hidden');
             mainApp.classList.remove('app-hidden');
             bottomNav.classList.remove('app-hidden');
-            await loadCloudState();
+            startCloudSync();
           } else {
             currentUser = null;
-            cloudLoaded = false;
-            mainApp.classList.add('app-hidden');
-            bottomNav.classList.add('app-hidden');
-            loginScreen.classList.remove('app-hidden');
+            stopCloudSync();
+            showLoginScreen();
           }
         });
       } catch (err) {
-        loginStatus.textContent = 'Erro ao iniciar Firebase: ' + err.message;
+        showLoginScreen('Erro ao iniciar Firebase: ' + err.message);
       }
     }
     function loginAdmin(e) {
@@ -1087,7 +1190,7 @@
       loginStatus.textContent = 'Entrando...';
       auth.signInWithEmailAndPassword(ADMIN_EMAIL, pass).catch(function(err){ loginStatus.textContent = 'Não foi possível entrar: ' + err.message; });
     }
-    function logoutAdmin() { if (auth) auth.signOut(); }
+    function logoutAdmin() { stopCloudSync(); if (auth) auth.signOut(); }
 
     initFirebase();
   </script>
